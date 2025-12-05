@@ -252,8 +252,8 @@ bool PHAL_configureHSESystemClock() {
 
         SW[1:0] = 01: HSE selected as system clock
     */ 
-    RCC->CFGR &= ~RCC_CFGR_SW;    // clear SW
-    RCC->CFGR |= RCC_CFGR_SW_HSE; // set HSE
+    RCC->CFGR &= ~RCC_CFGR_SW;    // clear SW register
+    RCC->CFGR |= RCC_CFGR_SW_HSE; // set HSE bit
 
     // Wait until the system clock switch status register indicates that HSE is selected
     while ((RCC->CFGR & RCC_CFGR_SWS_HSE) != RCC_CFGR_SWS_HSE) 
