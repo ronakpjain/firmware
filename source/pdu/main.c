@@ -19,14 +19,14 @@
 #include "common/phal/gpio.h"
 #include "common/phal/rcc.h"
 
+#include "cooling.h"
 #include "fan_control.h"
+#include "faults.h"
 #include "flow_rate.h"
 #include "led.h"
-#include "pdu_cooling.h"
-#include "pdu_faults.h"
-#include "pdu_state.h"
-#include "pdu_switches.h"
-#include "pdu_telemetry.h"
+#include "state.h"
+#include "switches.h"
+#include "telemetry.h"
 
 GPIOInitConfig_t gpio_config[] = {
     // Status Indicators
@@ -232,7 +232,7 @@ extern uint32_t PLLClockRateHz;
 
 void HardFault_Handler();
 
-static void pdu_heartbeat_led_sweep(void) {
+static void heartbeat_led_sweep(void) {
     static int led_index = 0;
     static bool decrement = false;
 
@@ -256,14 +256,14 @@ static void pdu_heartbeat_led_sweep(void) {
 // Thread Defines
 DEFINE_TASK(CAN_rx_update, 0, osPriorityHigh, STACK_2048);
 DEFINE_TASK(CAN_tx_update, 5, osPriorityHigh, STACK_1024);
-DEFINE_TASK(pdu_switches_periodic, 15, osPriorityNormal, STACK_512);
-DEFINE_TASK(pdu_cooling_periodic, 100, osPriorityNormal, STACK_1024);
+DEFINE_TASK(switches_periodic, 15, osPriorityNormal, STACK_512);
+DEFINE_TASK(cooling_periodic, 100, osPriorityNormal, STACK_1024);
 DEFINE_TASK(LED_periodic, 500, osPriorityLow, STACK_512);
-DEFINE_TASK(pdu_telemetry_power_periodic, 500, osPriorityLow, STACK_512);
-DEFINE_TASK(pdu_faults_periodic, 100, osPriorityLow, STACK_512);
-DEFINE_TASK(pdu_telemetry_flow_periodic, 200, osPriorityLow, STACK_256);
+DEFINE_TASK(telemetry_power_periodic, 500, osPriorityLow, STACK_512);
+DEFINE_TASK(faults_periodic, 100, osPriorityLow, STACK_512);
+DEFINE_TASK(telemetry_flow_periodic, 200, osPriorityLow, STACK_256);
 DEFINE_TASK(fault_library_periodic, 100, osPriorityLow, STACK_1024);
-DEFINE_HEARTBEAT_TASK(pdu_heartbeat_led_sweep);
+DEFINE_HEARTBEAT_TASK(heartbeat_led_sweep);
 
 int main() {
     // Hardware Initialization
@@ -296,26 +296,26 @@ int main() {
     }
     PHAL_writeGPIO(LED_CTRL_BLANK_GPIO_Port, LED_CTRL_BLANK_Pin, 1);
 
-    pdu_state_init_defaults();
-    pdu_switches_init();
-    pdu_faults_init();
+    state_init_defaults();
+    switches_init();
+    faults_init();
 
     fanControlInit();
-    pdu_cooling_init();
+    cooling_init();
     flowRateInit();
 
-    pdu_switches_enable_default_rails();
+    switches_enable_default_rails();
 
     osKernelInitialize();
 
     START_TASK(CAN_rx_update);
     START_TASK(CAN_tx_update);
-    START_TASK(pdu_switches_periodic);
-    START_TASK(pdu_cooling_periodic);
+    START_TASK(switches_periodic);
+    START_TASK(cooling_periodic);
     START_TASK(LED_periodic);
-    START_TASK(pdu_telemetry_power_periodic);
-    START_TASK(pdu_faults_periodic);
-    START_TASK(pdu_telemetry_flow_periodic);
+    START_TASK(telemetry_power_periodic);
+    START_TASK(faults_periodic);
+    START_TASK(telemetry_flow_periodic);
     START_TASK(fault_library_periodic);
     START_HEARTBEAT_TASK();
 
