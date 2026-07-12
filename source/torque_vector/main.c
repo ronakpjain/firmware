@@ -51,20 +51,15 @@ GPIOInitConfig_t gpio_config[] = {
 };
 
 static constexpr uint32_t TargetCoreClockrateHz = 16'000'000;
-ClockRateConfig_t clock_config = {
+PHAL_RCC_Config_t clock_config = {
     .clock_source           = CLOCK_SOURCE_HSE,
     .use_pll                = false,
     .system_clock_target_hz = TargetCoreClockrateHz,
-    .ahb_clock_target_hz    = (TargetCoreClockrateHz / 1),
-    .apb1_clock_target_hz   = (TargetCoreClockrateHz / (1)),
-    .apb2_clock_target_hz   = (TargetCoreClockrateHz / (1)),
+    .ahb_clock_target_hz    = TargetCoreClockrateHz,
+    .apb1_clock_target_hz   = TargetCoreClockrateHz,
+    .apb2_clock_target_hz   = TargetCoreClockrateHz,
+    .hse_bypass             = true,
 };
-
-/* Locals for Clock Rates */
-extern uint32_t APB1ClockRateHz;
-extern uint32_t APB2ClockRateHz;
-extern uint32_t AHBClockRateHz;
-extern uint32_t PLLClockRateHz;
 
 // USART Configuration for GPS
 static constexpr uint32_t GPS_BAUD_RATE = 460'800;
@@ -98,7 +93,7 @@ DEFINE_HEARTBEAT_TASK(nullptr);
 
 int main(void) {
     // Hardware Initialization
-    if (0 != PHAL_configureClockRates(&clock_config)) {
+    if (!PHAL_RCC_configure(&clock_config)) {
         HardFault_Handler();
     }
     WDG_init();

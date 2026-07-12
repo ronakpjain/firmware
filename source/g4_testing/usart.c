@@ -16,15 +16,14 @@ void HardFault_Handler();
 
 // Clock Configuration
 #define TargetCoreClockrateHz 16000000
-ClockRateConfig_t clock_config = {
+PHAL_RCC_Config_t clock_config = {
     .clock_source           = CLOCK_SOURCE_HSI,
+    .use_pll                = false,
     .system_clock_target_hz = TargetCoreClockrateHz,
-    .ahb_clock_target_hz    = (TargetCoreClockrateHz / 1),
-    .apb1_clock_target_hz   = (TargetCoreClockrateHz / (1)),
-    .apb2_clock_target_hz   = (TargetCoreClockrateHz / (1)),
+    .ahb_clock_target_hz    = TargetCoreClockrateHz,
+    .apb1_clock_target_hz   = TargetCoreClockrateHz,
+    .apb2_clock_target_hz   = TargetCoreClockrateHz,
 };
-extern uint32_t APB1ClockRateHz;
-
 // GPIO Configuration for LPUART1
 GPIOInitConfig_t gpio_config[] = {
     GPIO_INIT_USART2RX_PA3,
@@ -56,7 +55,7 @@ usart_init_t usart_config = {.periph           = USART2,
 int main() {
     osKernelInitialize();
 
-    if (PHAL_configureClockRates(&clock_config))
+    if (!PHAL_RCC_configure(&clock_config))
         HardFault_Handler();
     if (!PHAL_initGPIO(gpio_config, countof(gpio_config)))
         HardFault_Handler();
