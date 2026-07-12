@@ -10,7 +10,6 @@
 
 #define PHAL_DMA_CHANNEL_COUNT 8U
 #define PHAL_DMA_TIMEOUT       100000U
-#define PHAL_DMA_HANDLE_MAGIC  0x5044414DU
 
 typedef enum {
     PHAL_DMA_DIRECTION_PERIPHERAL_TO_MEMORY,
@@ -25,7 +24,7 @@ typedef enum {
 
 typedef void (*PHAL_DMA_CompletionCallback_t)(void *context, bool success);
 
-typedef struct {
+typedef struct PHAL_DMA_Route {
     DMA_TypeDef *controller;
     uint8_t channel;
     uint8_t request;
@@ -34,17 +33,6 @@ typedef struct {
     PHAL_DMA_Width_t memory_width;
     uint8_t priority;
 } PHAL_DMA_Route_t;
-
-typedef struct {
-    uint32_t magic;
-    const PHAL_DMA_Route_t *route;
-    DMA_Channel_TypeDef *registers;
-    PHAL_DMA_CompletionCallback_t callback;
-    void *callback_context;
-    volatile bool busy;
-    bool circular;
-    bool initialized;
-} PHAL_DMA_State_t;
 
 bool PHAL_DMA_internalInit(
     PHAL_DMA_Handle_t *handle,
@@ -62,8 +50,10 @@ bool PHAL_DMA_internalStart(
     void *context
 );
 
+bool PHAL_DMA_internalDisable(PHAL_DMA_Handle_t *handle);
+void PHAL_DMA_internalClearTransfer(PHAL_DMA_Handle_t *handle);
+bool PHAL_DMA_internalRelease(PHAL_DMA_Handle_t *handle);
 void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel);
-bool PHAL_DMA_internalAbort(PHAL_DMA_State_t *state);
 
 size_t PHAL_DMA_internalRemaining(const PHAL_DMA_Handle_t *handle);
 

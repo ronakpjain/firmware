@@ -5,13 +5,19 @@
 static PHAL_DMA_Handle_t *dma1_owners[PHAL_DMA_CHANNEL_COUNT] = {0};
 static PHAL_DMA_Handle_t *dma2_owners[PHAL_DMA_CHANNEL_COUNT] = {0};
 
-static PHAL_DMA_State_t *state_for_handle(const PHAL_DMA_Handle_t *handle) {
-    if (handle == NULL) {
-        return NULL;
-    }
+static PHAL_DMA_Handle_t *validated_handle(const PHAL_DMA_Handle_t *handle) {
+    return handle != NULL && handle->initialized
+        ? (PHAL_DMA_Handle_t *)(uintptr_t)handle
+        : NULL;
+}
 
-    PHAL_DMA_State_t *state = (PHAL_DMA_State_t *)(uintptr_t)handle->_storage;
-    return state->magic == PHAL_DMA_HANDLE_MAGIC ? state : NULL;
+static bool handle_owns_channel(const PHAL_DMA_Handle_t *handle) {
+    for (size_t i = 0U; i < PHAL_DMA_CHANNEL_COUNT; ++i) {
+        if (dma1_owners[i] == handle || dma2_owners[i] == handle) {
+            return true;
+        }
+    }
+    return false;
 }
 
 static PHAL_DMA_Handle_t **owners_for_controller(DMA_TypeDef *controller) {
@@ -109,10 +115,10 @@ static uint32_t channel_transfer_error_flag(uint8_t channel) {
         : 0U;
 }
 
-static bool disable_channel(PHAL_DMA_State_t *state) {
-    state->registers->CCR &= ~DMA_CCR_EN;
+bool PHAL_DMA_internalDisable(PHAL_DMA_Handle_t *handle) {
+    handle->registers->CCR &= ~DMA_CCR_EN;
     for (uint32_t timeout = PHAL_DMA_TIMEOUT; timeout != 0U; --timeout) {
-        if ((state->registers->CCR & DMA_CCR_EN) == 0U) {
+        if ((handle->registers->CCR & DMA_CCR_EN) == 0U) {
             return true;
         }
     }
@@ -179,8 +185,7 @@ bool PHAL_DMA_internalInit(
         return false;
     }
 
-    PHAL_DMA_State_t *state = state_for_handle(handle);
-    if (state != NULL && state->busy) {
+    if (handle_owns_channel(handle) && handle->busy) {
         return false;
     }
 
@@ -197,16 +202,15 @@ bool PHAL_DMA_internalInit(
     }
     (void)RCC->AHB1ENR;
 
-    state = (PHAL_DMA_State_t *)(uintptr_t)handle->_storage;
-    memset(state, 0, sizeof(*state));
-    state->magic = PHAL_DMA_HANDLE_MAGIC;
+    memset(handle, 0, sizeof(*handle));
+    PHAL_DMA_Handle_t *state = handle;
     state->route = route;
     state->registers = registers;
     state->initialized = true;
 
     owners[route->channel - 1U] = handle;
 
-    if (!disable_channel(state)) {
+    if (!PHAL_DMA_internalDisable(state)) {
         remove_owner(handle);
         memset(state, 0, sizeof(*state));
         return false;
@@ -228,14 +232,14 @@ bool PHAL_DMA_internalStart(
     PHAL_DMA_CompletionCallback_t callback,
     void *context
 ) {
-    PHAL_DMA_State_t *state = state_for_handle(handle);
+    PHAL_DMA_Handle_t *state = validated_handle(handle);
     if (state == NULL || !state->initialized || peripheral_address == NULL
         || memory_address == NULL || count == 0U || count > UINT16_MAX
         || callback == NULL || state->busy) {
         return false;
     }
 
-    if (!disable_channel(state)) {
+    if (!PHAL_DMA_internalDisable(state)) {
         return false;
     }
 
@@ -270,17 +274,24 @@ bool PHAL_DMA_internalStart(
     return true;
 }
 
-bool PHAL_DMA_internalAbort(PHAL_DMA_State_t *state) {
-    if (state == NULL || !state->initialized) {
-        return false;
-    }
-
-    bool disabled = disable_channel(state);
+void PHAL_DMA_internalClearTransfer(PHAL_DMA_Handle_t *state) {
     state->route->controller->IFCR = channel_flags(state->route->channel);
     state->busy = false;
     state->circular = false;
     state->callback = NULL;
     state->callback_context = NULL;
+}
+
+bool PHAL_DMA_internalRelease(PHAL_DMA_Handle_t *handle) {
+    PHAL_DMA_Handle_t *state = validated_handle(handle);
+    if (state == NULL) {
+        return false;
+    }
+
+    const bool disabled = PHAL_DMA_internalDisable(state);
+    state->route->controller->IFCR = channel_flags(state->route->channel);
+    remove_owner(handle);
+    memset(handle, 0, sizeof(*handle));
     return disabled;
 }
 
@@ -297,7 +308,7 @@ void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel) {
     }
 
     PHAL_DMA_Handle_t *handle = owners[channel - 1U];
-    PHAL_DMA_State_t *state = state_for_handle(handle);
+    PHAL_DMA_Handle_t *state = validated_handle(handle);
     if (state == NULL || !state->initialized) {
         controller->IFCR = flags;
         return;
@@ -313,7 +324,7 @@ void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel) {
     const bool keep_circular = state->circular && !error;
     bool disabled = true;
     if (!keep_circular) {
-        disabled = disable_channel(state);
+        disabled = PHAL_DMA_internalDisable(state);
     }
     controller->IFCR = flags;
 
@@ -331,10 +342,11 @@ void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel) {
     if (callback != NULL) {
         callback(context, success);
     }
+    PHAL_DMA_transferCompleteCallback(handle, success);
 }
 
 size_t PHAL_DMA_internalRemaining(const PHAL_DMA_Handle_t *handle) {
-    const PHAL_DMA_State_t *state = state_for_handle(handle);
+    const PHAL_DMA_Handle_t *state = validated_handle(handle);
     if (state == NULL || !state->initialized) {
         return 0U;
     }
@@ -404,7 +416,6 @@ _Static_assert(sizeof(spi_rx_routes) / sizeof(spi_rx_routes[0]) == 3U, "SPI RX D
 _Static_assert(sizeof(spi_tx_routes) / sizeof(spi_tx_routes[0]) == 3U, "SPI TX DMA route table changed");
 _Static_assert(sizeof(usart_rx_routes) / sizeof(usart_rx_routes[0]) == 3U, "USART RX DMA route table changed");
 _Static_assert(sizeof(usart_tx_routes) / sizeof(usart_tx_routes[0]) == 3U, "USART TX DMA route table changed");
-_Static_assert(sizeof(PHAL_DMA_State_t) <= sizeof(PHAL_DMA_Handle_t), "DMA handle storage is too small");
 
 const PHAL_DMA_Route_t *PHAL_DMA_internalAdcRoute(ADC_TypeDef *instance) {
     if (instance == ADC1) return &adc_routes[0];
