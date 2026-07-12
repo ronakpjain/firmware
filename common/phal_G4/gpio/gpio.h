@@ -153,19 +153,42 @@ typedef struct {
  * @return true All GPIOs were a valid configuration format
  * @return false Some of the GPIOs had an invalid configuration format
  */
-bool PHAL_initGPIO(GPIOInitConfig_t config[], uint8_t config_len);
+bool PHAL_initGPIO(const GPIOInitConfig_t config[], uint8_t config_len);
 
 /**
- * @brief Read the state of the input register for the specific GPIO pin
+ * @brief Read one GPIO input value.
  *
- * @param bank GPIO Bank of the pin
- * @param pin GPIO pin number
- * @return true GPIO Input true
- * @return false GPIO Input false
+ * @param port Supported GPIO port.
+ * @param pin Pin number in the range 0..15.
+ * @param value Destination for the sampled IDR value.
+ * @return true The port, pin, and destination were valid.
+ * @return false Invalid argument.
+ * @note This function does not block and configures no peripheral state.
  */
-static inline bool PHAL_readGPIO(GPIO_TypeDef *bank, uint8_t pin) {
-    return (bank->IDR >> pin) & 0b1;
-}
+bool PHAL_GPIO_read(GPIO_TypeDef *port, uint8_t pin, bool *value);
+
+/**
+ * @brief Atomically set or reset one GPIO output.
+ *
+ * @param port Supported GPIO port.
+ * @param pin Pin number in the range 0..15.
+ * @param value true sets the pin; false resets it.
+ * @return true The port and pin were valid.
+ * @return false Invalid argument.
+ * @note This function does not block and writes BSRR by direct assignment.
+ */
+bool PHAL_GPIO_write(GPIO_TypeDef *port, uint8_t pin, bool value);
+
+/**
+ * @brief Atomically toggle one GPIO output latch.
+ *
+ * @param port Supported GPIO port.
+ * @param pin Pin number in the range 0..15.
+ * @return true The port and pin were valid.
+ * @return false Invalid argument.
+ * @note The ODR latch, rather than the external IDR level, determines the next value.
+ */
+bool PHAL_GPIO_toggle(GPIO_TypeDef *port, uint8_t pin);
 
 #define GPIO_INIT_USART3TX_PC10 \
     GPIO_INIT_AF(GPIOC, \
@@ -325,20 +348,9 @@ static inline bool PHAL_readGPIO(GPIO_TypeDef *bank, uint8_t pin) {
 #define GPIO_INIT_SPI2NSS_CET_PA8 \
     GPIO_INIT_AF(GPIOA, 8, 5, GPIO_OUTPUT_ULTRA_SPEED, GPIO_OUTPUT_PUSH_PULL, GPIO_INPUT_OPEN_DRAIN)
 
-/**
- * @brief Write a logic value to an output pin
- *
- * @param bank GPIO Bank of the pin
- * @param pin GPIO pin number
- * @param value Logical value to write
- */
-static inline void PHAL_writeGPIO(GPIO_TypeDef *bank, uint8_t pin, bool value) {
-    bank->BSRR |=
-        1 << ((!value << 4) | pin); // BSRR has "set" as bottom 16 bits and "reset" as top 16
-}
-
-static inline void PHAL_toggleGPIO(GPIO_TypeDef *bank, uint8_t pin) {
-    PHAL_writeGPIO(bank, pin, !PHAL_readGPIO(bank, pin));
-}
+/** Deprecated source-compatibility wrappers; migrate to PHAL_GPIO_* functions. */
+bool PHAL_readGPIO(GPIO_TypeDef *port, uint8_t pin);
+void PHAL_writeGPIO(GPIO_TypeDef *port, uint8_t pin, bool value);
+void PHAL_toggleGPIO(GPIO_TypeDef *port, uint8_t pin);
 
 #endif // __PHAL_G4_GPIO_H__
