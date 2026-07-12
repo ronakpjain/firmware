@@ -38,24 +38,17 @@ SPI_InitConfig_t bms_spi_config = {
     .data_rate     = 500'000, // 500 kHz SPI clock for ADBMS6380
 };
 
-ADCInitConfig_t adc_config = {
-    .prescaler      = ADC_CLK_PRESC_2,
-    .resolution     = ADC_RES_12_BIT,
-    .data_align     = ADC_DATA_ALIGN_RIGHT,
-    .cont_conv_mode = true,
-    .dma_mode       = ADC_DMA_CIRCULAR,
-    .periph         = ADC1,
-};
-
+PHAL_ADC_Handle_t adc_handle;
 volatile adc1_dma_buffer_t adc1_dma_buffer;
-ADCChannelConfig_t adc_channel_config[] = {
-    {.channel = ISENSE_ADC_CHANNEL, .rank = 1, .sampling_time = ADC_CHN_SMP_CYCLES_480},
-    {.channel = VBATT_ADC_CHANNEL, .rank = 2, .sampling_time = ADC_CHN_SMP_CYCLES_480}
+const PHAL_ADC_ChannelConfig_t adc_channel_config[] = {
+    {.channel = ISENSE_ADC_CHANNEL},
+    {.channel = VBATT_ADC_CHANNEL}
 };
-dma_init_t adc_dma_config = ADC1_DMA_CONT_CONFIG(
-    (uint32_t)&adc1_dma_buffer,
-    sizeof(adc1_dma_buffer) / sizeof(uint16_t), 0b01
-);
+const PHAL_ADC_Config_t adc_config = {
+    .instance      = ADC1,
+    .channels      = adc_channel_config,
+    .channel_count = sizeof(adc_channel_config) / sizeof(adc_channel_config[0]),
+};
 
 /* PER HAL Initilization Structures */
 GPIOInitConfig_t gpio_config[] = {
@@ -128,7 +121,7 @@ int main(void) {
         HardFault_Handler();
     }
     WDG_init();
-    if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (false == PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
 
@@ -141,14 +134,13 @@ int main(void) {
 
     adbms_init(&g_bms, &bms_spi_config, g_bms_tx_buf);
 
-    if (false == PHAL_initADC(&adc_config, adc_channel_config, countof(adc_channel_config))) {
+    if (!PHAL_ADC_init(&adc_handle, &adc_config)) {
         HardFault_Handler();
     }
-    if (false == PHAL_initDMA(&adc_dma_config)) {
+    if (!PHAL_ADC_start(&adc_handle, (uint16_t *)&adc1_dma_buffer,
+                        sizeof(adc1_dma_buffer) / sizeof(uint16_t))) {
         HardFault_Handler();
     }
-    PHAL_startADC(&adc_config);
-    PHAL_startTxfer(&adc_dma_config);
 
     if (false == PHAL_FDCAN_init(FDCAN1, false, VCAN_BAUD_RATE)) {
         HardFault_Handler();
