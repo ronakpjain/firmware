@@ -49,10 +49,10 @@ int main() {
         HardFault_Handler();
     }
 
-    PHAL_writeGPIO(LED_GREEN_PORT, LED_GREEN_PIN, 1);
-    PHAL_writeGPIO(LED_RED_PORT, LED_RED_PIN, 1);
-    PHAL_writeGPIO(LED_BLUE_PORT, LED_BLUE_PIN, 1);
-    PHAL_writeGPIO(LED_ORANGE_PORT, LED_ORANGE_PIN, 1);
+    PHAL_GPIO_write(LED_GREEN_PORT, LED_GREEN_PIN, 1);
+    PHAL_GPIO_write(LED_RED_PORT, LED_RED_PIN, 1);
+    PHAL_GPIO_write(LED_BLUE_PORT, LED_BLUE_PIN, 1);
+    PHAL_GPIO_write(LED_ORANGE_PORT, LED_ORANGE_PIN, 1);
 
     osKernelInitialize();
 
@@ -68,19 +68,19 @@ int main() {
 }
 
 static void ledblink1(void) {
-    PHAL_toggleGPIO(LED_GREEN_PORT, LED_GREEN_PIN);
+    PHAL_GPIO_toggle(LED_GREEN_PORT, LED_GREEN_PIN);
 }
 
 static void ledblink2(void) {
-    PHAL_toggleGPIO(LED_RED_PORT, LED_RED_PIN);
+    PHAL_GPIO_toggle(LED_RED_PORT, LED_RED_PIN);
 }
 
 static void ledblink3(void) {
-    PHAL_toggleGPIO(LED_BLUE_PORT, LED_BLUE_PIN);
+    PHAL_GPIO_toggle(LED_BLUE_PORT, LED_BLUE_PIN);
 }
 
 static void ledblink4(void) {
-    PHAL_toggleGPIO(LED_ORANGE_PORT, LED_ORANGE_PIN);
+    PHAL_GPIO_toggle(LED_ORANGE_PORT, LED_ORANGE_PIN);
 }
 
 void HardFault_Handler() {
