@@ -185,14 +185,14 @@ static void adc_dma_complete(void *context, bool success) {
     }
 }
 
-bool PHAL_ADC_internalConfigure(PHAL_ADC_Handle_t *handle, const PHAL_ADC_Config_t *config) {
-    if (handle == NULL || config == NULL || !supported_adc(config->instance)
-        || config->resolution > PHAL_ADC_RESOLUTION_6_BIT
-        || config->alignment > PHAL_ADC_ALIGNMENT_LEFT
-        || !valid_channels(config)) {
-        return false;
-    }
+bool PHAL_ADC_internalValidateConfig(const PHAL_ADC_Config_t *config) {
+    return config != NULL && supported_adc(config->instance)
+        && config->resolution <= PHAL_ADC_RESOLUTION_6_BIT
+        && config->alignment <= PHAL_ADC_ALIGNMENT_LEFT
+        && valid_channels(config);
+}
 
+bool PHAL_ADC_internalConfigureHardware(const PHAL_ADC_Config_t *config) {
     ADC_TypeDef *adc = config->instance;
     enable_adc_clock(adc);
     configure_adc_clock(adc);
@@ -225,15 +225,16 @@ bool PHAL_ADC_internalConfigure(PHAL_ADC_Handle_t *handle, const PHAL_ADC_Config
     adc->CFGR = cfgr;
 
     configure_sequence(adc, config);
-    if (!configure_oversampling(adc, config->oversampling)) {
-        return false;
-    }
+    return configure_oversampling(adc, config->oversampling);
+}
 
+bool PHAL_ADC_internalInitializeDma(PHAL_ADC_Handle_t *handle, ADC_TypeDef *adc) {
     const PHAL_DMA_Route_t *route = PHAL_DMA_internalAdcRoute(adc);
-    if (route == NULL || !PHAL_DMA_internalInit(&handle->dma, route)) {
-        return false;
-    }
+    return route != NULL && PHAL_DMA_internalInit(&handle->dma, route);
+}
 
+bool PHAL_ADC_internalEnable(PHAL_ADC_Handle_t *handle, const PHAL_ADC_Config_t *config) {
+    ADC_TypeDef *adc = config->instance;
     adc->ISR = ADC_ISR_ADRDY | ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR;
     adc->CR |= ADC_CR_ADEN;
     if (!wait_adc_flag(adc, ADC_ISR_ADRDY, true)) {
@@ -250,15 +251,23 @@ bool PHAL_ADC_internalConfigure(PHAL_ADC_Handle_t *handle, const PHAL_ADC_Config
     return true;
 }
 
-bool PHAL_ADC_internalStart(PHAL_ADC_Handle_t *handle, uint16_t *samples, size_t sample_count) {
-    if (handle == NULL || !handle->initialized || handle->instance == NULL
-        || samples == NULL || sample_count == 0U || handle->busy
-        || sample_count % handle->sequence_length != 0U
-        || (handle->instance->CR & ADC_CR_ADEN) == 0U
-        || (handle->instance->ISR & ADC_ISR_ADRDY) == 0U) {
-        return false;
-    }
+bool PHAL_ADC_internalValidateStart(
+    const PHAL_ADC_Handle_t *handle,
+    const uint16_t *samples,
+    size_t sample_count
+) {
+    return handle != NULL && handle->initialized && handle->instance != NULL
+        && samples != NULL && sample_count != 0U && !handle->busy
+        && handle->sequence_length != 0U && sample_count % handle->sequence_length == 0U
+        && (handle->instance->CR & ADC_CR_ADEN) != 0U
+        && (handle->instance->ISR & ADC_ISR_ADRDY) != 0U;
+}
 
+bool PHAL_ADC_internalStartDma(
+    PHAL_ADC_Handle_t *handle,
+    uint16_t *samples,
+    size_t sample_count
+) {
     handle->busy = true;
     handle->success = false;
     handle->instance->ISR = ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR;
@@ -280,22 +289,20 @@ bool PHAL_ADC_internalStart(PHAL_ADC_Handle_t *handle, uint16_t *samples, size_t
     return true;
 }
 
-bool PHAL_ADC_internalStop(PHAL_ADC_Handle_t *handle) {
-    if (handle == NULL || !handle->initialized || handle->instance == NULL) {
-        return false;
+bool PHAL_ADC_internalValidateHandle(const PHAL_ADC_Handle_t *handle) {
+    return handle != NULL && handle->initialized && handle->instance != NULL;
+}
+
+bool PHAL_ADC_internalStopConversion(PHAL_ADC_Handle_t *handle) {
+    if ((handle->instance->CR & ADC_CR_ADSTART) == 0U) {
+        return true;
     }
 
-    bool success = true;
-    if ((handle->instance->CR & ADC_CR_ADSTART) != 0U) {
-        handle->instance->CR |= ADC_CR_ADSTP;
-        if (!wait_register(&handle->instance->CR, ADC_CR_ADSTART, false)) {
-            success = false;
-        }
-    }
-    if (!PHAL_DMA_abort(&handle->dma)) {
-        success = false;
-    }
+    handle->instance->CR |= ADC_CR_ADSTP;
+    return wait_register(&handle->instance->CR, ADC_CR_ADSTART, false);
+}
+
+void PHAL_ADC_internalCompleteStop(PHAL_ADC_Handle_t *handle, bool success) {
     handle->busy = false;
     handle->success = success;
-    return success;
 }
