@@ -48,9 +48,6 @@ typedef struct {
     bool hse_bypass;
 } PHAL_RCC_Config_t;
 
-/** Compatibility name retained while G4 board initializers migrate. */
-typedef PHAL_RCC_Config_t ClockRateConfig_t;
-
 /**
  * @brief Configure the G4 system, AHB, and APB clocks.
  *
@@ -100,17 +97,5 @@ uint32_t PHAL_RCC_apb2ClockHz(void);
  * @return The FDCAN kernel clock frequency, or zero for an unsupported source.
  */
 uint32_t PHAL_RCC_fdcanClockHz(void);
-
-/**
- * @deprecated Use PHAL_RCC_configure(), which returns true on success.
- * @return 0 on success; 1 on failure. Retained only for source compatibility.
- */
-uint8_t PHAL_configureClockRates(ClockRateConfig_t *config);
-
-/* Deprecated data symbols for source-compatible board migration only. */
-extern uint32_t APB1ClockRateHz;
-extern uint32_t APB2ClockRateHz;
-extern uint32_t AHBClockRateHz;
-extern uint32_t PLLClockRateHz;
 
 #endif
