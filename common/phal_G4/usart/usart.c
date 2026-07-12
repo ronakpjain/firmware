@@ -3,14 +3,27 @@
 #include <stddef.h>
 
 bool PHAL_USART_init(PHAL_USART_Handle_t *handle, const PHAL_USART_Config_t *config) {
+    if (handle == NULL || !PHAL_USART_internalValidateConfig(config)) {
+        return false;
+    }
+
+    const PHAL_USART_InternalConfig_t hardware_config = {
+        .instance = config->instance,
+        .baud_rate = config->baud_rate,
+        .word_length = 8U,
+        .parity = PHAL_USART_INTERNAL_PARITY_NONE,
+        .stop_bits = 1U,
+        .hardware_rts = false,
+        .hardware_cts = false,
+    };
     uint32_t baud_register;
-    if (handle == NULL || !PHAL_USART_internalValidateConfig(config)
+    if (!PHAL_USART_internalValidateHardwareConfig(&hardware_config)
         || !PHAL_USART_internalPrepareInstance(config, &baud_register)
         || !PHAL_USART_internalInitializeStateAndDma(handle, config)) {
         return false;
     }
 
-    PHAL_USART_internalConfigureRegisters(handle, config, baud_register);
+    PHAL_USART_internalConfigureRegisters(handle, &hardware_config, baud_register);
     return true;
 }
 
@@ -21,7 +34,7 @@ bool PHAL_USART_transmit(PHAL_USART_Handle_t *handle, const uint8_t *data, size_
     return PHAL_USART_internalArmTransmit(handle, data, length);
 }
 
-bool PHAL_USART_transmitBlocking(
+bool PHAL_USART_transmit_noDMA(
     PHAL_USART_Handle_t *handle,
     const uint8_t *data,
     size_t length,
@@ -51,7 +64,7 @@ bool PHAL_USART_receive(PHAL_USART_Handle_t *handle, uint8_t *data, size_t lengt
     return PHAL_USART_internalArmReceive(handle, data, length, false);
 }
 
-bool PHAL_USART_receiveBlocking(
+bool PHAL_USART_receive_noDMA(
     PHAL_USART_Handle_t *handle,
     uint8_t *data,
     size_t length,

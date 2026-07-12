@@ -27,7 +27,7 @@ bool BMI088_init(BMI088_Handle_t *bmi) {
 
     PHAL_SPI_writeByte(bmi->spi, BMI088_GYRO_BANDWIDTH_ADDR, bmi->gyro_datarate);
     PHAL_SPI_writeByte(bmi->spi, BMI088_GYRO_RANGE_ADDR, bmi->gyro_range);
-    PHAL_writeGPIO(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
 
     // Perform self tests for sensor
     BMI088_gyroSelfTestStart(bmi);
@@ -78,14 +78,14 @@ bool BMI088_gyroOK(BMI088_Handle_t *bmi) {
 bool BMI088_gyroSelfTestStart(BMI088_Handle_t *bmi) {
     BMI088_selectGyro(bmi);
     PHAL_SPI_writeByte(bmi->spi, BMI088_GYRO_SELFTEST_ADDR, 0x01U);
-    PHAL_writeGPIO(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
     return true;
 }
 
 bool BMI088_gyroSelfTestComplete(BMI088_Handle_t *bmi) {
     BMI088_selectGyro(bmi);
     uint8_t self_test_res = PHAL_SPI_readByte(bmi->spi, BMI088_GYRO_SELFTEST_ADDR, true);
-    PHAL_writeGPIO(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
     return (self_test_res & 0b10) == 0b10;
 }
 
@@ -94,11 +94,11 @@ bool BMI088_gyroSelfTestPass(BMI088_Handle_t *bmi) {
     uint8_t test_result = PHAL_SPI_readByte(bmi->spi, BMI088_GYRO_SELFTEST_ADDR, true);
     if (test_result & 0b10) {
         // Self test completed
-        PHAL_writeGPIO(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
+        PHAL_GPIO_write(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
         return (test_result & 0b10100) == 0b10000;
     }
     // Self test was not yet run
-    PHAL_writeGPIO(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
     return false;
 }
 
@@ -183,7 +183,7 @@ bool BMI088_readGyro(BMI088_Handle_t *bmi) {
     bmi->data.gyro_z = raw_z / scale;
 
     // Write the CSB state to high to deselect the gyro
-    PHAL_writeGPIO(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
     return true;
 }
 
@@ -213,13 +213,13 @@ bool BMI088_readAccel(BMI088_Handle_t *bmi) {
     bmi->data.accel_z = (float)(raw_az << (bmi->accel_range + 1)) / 32768.0f * G_TO_M_S * 1.5f;
 
     // Write the CSB state to high to deselect the accelerometer
-    PHAL_writeGPIO(SPI_CS_ACEL_GPIO_Port, SPI_CS_ACEL_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_ACEL_GPIO_Port, SPI_CS_ACEL_Pin, 1);
     return true;
 }
 
 static inline void BMI088_selectGyro(BMI088_Handle_t *bmi) {
     // Write the current CSB state to high to deselect the accelerometer
-    PHAL_writeGPIO(SPI_CS_ACEL_GPIO_Port, SPI_CS_ACEL_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_ACEL_GPIO_Port, SPI_CS_ACEL_Pin, 1);
 
     // Set the CSB for the gyro
     bmi->spi->nss_gpio_port = SPI_CS_GYRO_GPIO_Port;
@@ -228,7 +228,7 @@ static inline void BMI088_selectGyro(BMI088_Handle_t *bmi) {
 
 static inline void BMI088_selectAccel(BMI088_Handle_t *bmi) {
     // Write the current CSB state to high to deselect the gyro
-    PHAL_writeGPIO(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
+    PHAL_GPIO_write(SPI_CS_GYRO_GPIO_Port, SPI_CS_GYRO_Pin, 1);
 
     // Set the CSB for the accelerometer
     bmi->spi->nss_gpio_port = SPI_CS_ACEL_GPIO_Port;

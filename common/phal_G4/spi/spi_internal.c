@@ -59,7 +59,7 @@ static bool enable_clock(SPI_TypeDef *instance) {
 
 static void set_chip_select(const PHAL_SPI_Handle_t *handle, bool asserted) {
     if (handle->software_chip_select && handle->chip_select_port != NULL) {
-        PHAL_writeGPIO(
+        PHAL_GPIO_write(
             handle->chip_select_port,
             handle->chip_select_pin,
             !asserted
@@ -84,13 +84,13 @@ static bool select_baud_rate(uint32_t input_hz, uint32_t requested_hz, uint32_t 
     return true;
 }
 
-bool PHAL_SPI_internalValidateConfig(const PHAL_SPI_Config_t *config) {
+bool PHAL_SPI_internalValidateConfig(const PHAL_SPI_InternalConfig_t *config) {
     return config != NULL && supported_instance(config->instance)
         && config->mode <= PHAL_SPI_MODE_SLAVE && config->frame_size_bits == 8U
         && (!config->software_chip_select || config->chip_select_port != NULL);
 }
 
-bool PHAL_SPI_internalConfigureRegisters(const PHAL_SPI_Config_t *config) {
+bool PHAL_SPI_internalConfigureRegisters(const PHAL_SPI_InternalConfig_t *config) {
     const uint32_t input_hz = config->instance == SPI1
         ? PHAL_RCC_apb2ClockHz()
         : PHAL_RCC_apb1ClockHz();
@@ -290,6 +290,7 @@ bool PHAL_SPI_internalTeardown(PHAL_SPI_Handle_t *handle, bool success) {
     if (state != NULL) {
         state->registered = false;
     }
+    PHAL_SPI_transferCompleteCallback(handle, result);
     return result;
 }
 

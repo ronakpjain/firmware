@@ -117,16 +117,3 @@ void PHAL_GPIO_internalConfigureAnalog(const GPIOInitConfig_t *entry) {
     configure_pull(entry->bank, entry->pin, GPIO_INPUT_OPEN_DRAIN);
     configure_mode(entry->bank, entry->pin, GPIO_TYPE_ANALOG);
 }
-
-void PHAL_GPIO_internalRead(GPIO_TypeDef *port, uint8_t pin, bool *value) {
-    *value = ((port->IDR >> pin) & 1U) != 0U;
-}
-
-void PHAL_GPIO_internalWrite(GPIO_TypeDef *port, uint8_t pin, bool value) {
-    port->BSRR = value ? (1UL << pin) : (1UL << (pin + 16U));
-}
-
-void PHAL_GPIO_internalToggle(GPIO_TypeDef *port, uint8_t pin) {
-    const bool current = ((port->ODR >> pin) & 1U) != 0U;
-    port->BSRR = current ? (1UL << (pin + 16U)) : (1UL << pin);
-}

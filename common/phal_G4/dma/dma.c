@@ -28,6 +28,14 @@ bool PHAL_DMA_abort(PHAL_DMA_Handle_t *handle) {
     return disabled;
 }
 
+__attribute__((weak)) void PHAL_DMA_transferCompleteCallback(
+    PHAL_DMA_Handle_t *handle,
+    bool success
+) {
+    (void)handle;
+    (void)success;
+}
+
 void DMA1_Channel1_IRQHandler(void) { PHAL_DMA_internalHandleIRQ(DMA1, 1U); }
 void DMA1_Channel2_IRQHandler(void) { PHAL_DMA_internalHandleIRQ(DMA1, 2U); }
 void DMA1_Channel3_IRQHandler(void) { PHAL_DMA_internalHandleIRQ(DMA1, 3U); }

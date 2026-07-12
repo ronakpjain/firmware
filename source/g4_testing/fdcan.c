@@ -36,7 +36,7 @@ DEFINE_QUEUE(q_can_rx, PHAL_CAN_Message_t, 256);
 int main() {
     osKernelInitialize();
     if (!PHAL_RCC_configure(&clock_config)
-        || !PHAL_initGPIO(gpio_config, countof(gpio_config))
+        || !PHAL_GPIO_init(gpio_config, countof(gpio_config))
         || !PHAL_CAN_init(&PHAL_CAN2, &(PHAL_CAN_Config_t){.bit_rate = 500000U, .loopback = false})
         || !PHAL_CAN_init(&PHAL_CAN3, &(PHAL_CAN_Config_t){.bit_rate = 500000U, .loopback = false})) {
         HardFault_Handler();

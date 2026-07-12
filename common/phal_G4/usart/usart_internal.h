@@ -7,6 +7,22 @@
 #define PHAL_USART_INTERNAL_TIMEOUT 100000U
 #define PHAL_USART_SLOT_COUNT       3U
 
+typedef enum {
+    PHAL_USART_INTERNAL_PARITY_NONE,
+    PHAL_USART_INTERNAL_PARITY_EVEN,
+    PHAL_USART_INTERNAL_PARITY_ODD,
+} PHAL_USART_InternalParity_t;
+
+typedef struct {
+    USART_TypeDef *instance;
+    uint32_t baud_rate;
+    uint8_t word_length;
+    PHAL_USART_InternalParity_t parity;
+    uint8_t stop_bits;
+    bool hardware_rts;
+    bool hardware_cts;
+} PHAL_USART_InternalConfig_t;
+
 typedef struct {
     PHAL_USART_Handle_t *handle;
     uint8_t *rx_buffer;
@@ -28,9 +44,12 @@ bool PHAL_USART_internalInitializeStateAndDma(
     PHAL_USART_Handle_t *handle,
     const PHAL_USART_Config_t *config
 );
+bool PHAL_USART_internalValidateHardwareConfig(
+    const PHAL_USART_InternalConfig_t *config
+);
 void PHAL_USART_internalConfigureRegisters(
     PHAL_USART_Handle_t *handle,
-    const PHAL_USART_Config_t *config,
+    const PHAL_USART_InternalConfig_t *config,
     uint32_t baud_register
 );
 

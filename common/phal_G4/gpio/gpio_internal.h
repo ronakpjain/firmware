@@ -10,8 +10,5 @@ void PHAL_GPIO_internalConfigureOutput(const GPIOInitConfig_t *entry);
 void PHAL_GPIO_internalConfigureInput(const GPIOInitConfig_t *entry);
 void PHAL_GPIO_internalConfigureAlternateFunction(const GPIOInitConfig_t *entry);
 void PHAL_GPIO_internalConfigureAnalog(const GPIOInitConfig_t *entry);
-void PHAL_GPIO_internalRead(GPIO_TypeDef *port, uint8_t pin, bool *value);
-void PHAL_GPIO_internalWrite(GPIO_TypeDef *port, uint8_t pin, bool value);
-void PHAL_GPIO_internalToggle(GPIO_TypeDef *port, uint8_t pin);
 
 #endif

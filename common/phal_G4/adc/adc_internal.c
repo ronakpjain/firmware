@@ -74,7 +74,7 @@ static void regulator_delay(void) {
     }
 }
 
-static bool valid_channels(const PHAL_ADC_Config_t *config) {
+static bool valid_channels(const PHAL_ADC_InternalConfig_t *config) {
     if (config->channels == NULL || config->channel_count == 0U
         || config->channel_count > 16U) {
         return false;
@@ -82,10 +82,10 @@ static bool valid_channels(const PHAL_ADC_Config_t *config) {
 
     bool used_ranks[16] = {false};
     for (size_t i = 0U; i < config->channel_count; ++i) {
-        const PHAL_ADC_ChannelConfig_t *channel = &config->channels[i];
+        const PHAL_ADC_InternalChannelConfig_t *channel = &config->channels[i];
         if (channel->channel > 18U || channel->rank < 1U
             || channel->rank > config->channel_count
-            || channel->sample_time > PHAL_ADC_SAMPLE_480_CYCLES
+            || channel->sample_time > PHAL_ADC_INTERNAL_SAMPLE_480_CYCLES
             || used_ranks[channel->rank - 1U]) {
             return false;
         }
@@ -119,7 +119,7 @@ static void set_sequence_slot(ADC_TypeDef *adc, uint8_t rank, uint8_t channel) {
         | (((uint32_t)channel & 0x1FU) << shift);
 }
 
-static void configure_sequence(ADC_TypeDef *adc, const PHAL_ADC_Config_t *config) {
+static void configure_sequence(ADC_TypeDef *adc, const PHAL_ADC_InternalConfig_t *config) {
     adc->SQR1 = ((uint32_t)(config->channel_count - 1U) << ADC_SQR1_L_Pos)
         & ADC_SQR1_L_Msk;
     adc->SQR2 = 0U;
@@ -129,7 +129,7 @@ static void configure_sequence(ADC_TypeDef *adc, const PHAL_ADC_Config_t *config
     adc->SMPR2 = 0U;
 
     for (size_t i = 0U; i < config->channel_count; ++i) {
-        const PHAL_ADC_ChannelConfig_t *channel = &config->channels[i];
+        const PHAL_ADC_InternalChannelConfig_t *channel = &config->channels[i];
         set_sequence_slot(adc, channel->rank, channel->channel);
         if (channel->channel <= 9U) {
             const uint32_t shift = 3U * channel->channel;
@@ -143,14 +143,14 @@ static void configure_sequence(ADC_TypeDef *adc, const PHAL_ADC_Config_t *config
     }
 }
 
-static bool configure_oversampling(ADC_TypeDef *adc, PHAL_ADC_Oversampling_t count) {
+static bool configure_oversampling(ADC_TypeDef *adc, PHAL_ADC_InternalOversampling_t count) {
     uint32_t cfgr2 = adc->CFGR2;
     cfgr2 &= ~(ADC_CFGR2_ROVSE | ADC_CFGR2_OVSR_Msk | ADC_CFGR2_OVSS_Msk);
-    if (count == PHAL_ADC_OVERSAMPLING_NONE) {
+    if (count == PHAL_ADC_INTERNAL_OVERSAMPLING_NONE) {
         adc->CFGR2 = cfgr2;
         return true;
     }
-    if (count < PHAL_ADC_OVERSAMPLING_2 || count > PHAL_ADC_OVERSAMPLING_256
+    if (count < PHAL_ADC_INTERNAL_OVERSAMPLING_2 || count > PHAL_ADC_INTERNAL_OVERSAMPLING_256
         || (((uint32_t)count & ((uint32_t)count - 1U)) != 0U)) {
         return false;
     }
@@ -183,16 +183,17 @@ static void adc_dma_complete(void *context, bool success) {
     if ((handle->instance->CFGR & ADC_CFGR_CONT) == 0U || !success) {
         handle->busy = false;
     }
+    PHAL_ADC_conversionCompleteCallback(handle, success);
 }
 
-bool PHAL_ADC_internalValidateConfig(const PHAL_ADC_Config_t *config) {
+bool PHAL_ADC_internalValidateConfig(const PHAL_ADC_InternalConfig_t *config) {
     return config != NULL && supported_adc(config->instance)
-        && config->resolution <= PHAL_ADC_RESOLUTION_6_BIT
-        && config->alignment <= PHAL_ADC_ALIGNMENT_LEFT
+        && config->resolution <= PHAL_ADC_INTERNAL_RESOLUTION_6_BIT
+        && config->alignment <= PHAL_ADC_INTERNAL_ALIGNMENT_LEFT
         && valid_channels(config);
 }
 
-bool PHAL_ADC_internalConfigureHardware(const PHAL_ADC_Config_t *config) {
+bool PHAL_ADC_internalConfigureHardware(const PHAL_ADC_InternalConfig_t *config) {
     ADC_TypeDef *adc = config->instance;
     enable_adc_clock(adc);
     configure_adc_clock(adc);
@@ -215,7 +216,7 @@ bool PHAL_ADC_internalConfigureHardware(const PHAL_ADC_Config_t *config) {
     cfgr &= ~(ADC_CFGR_CONT | ADC_CFGR_DISCEN | ADC_CFGR_DMAEN
               | ADC_CFGR_DMACFG | ADC_CFGR_RES_Msk | ADC_CFGR_ALIGN);
     cfgr |= ((uint32_t)config->resolution << ADC_CFGR_RES_Pos) & ADC_CFGR_RES_Msk;
-    if (config->alignment == PHAL_ADC_ALIGNMENT_LEFT) {
+    if (config->alignment == PHAL_ADC_INTERNAL_ALIGNMENT_LEFT) {
         cfgr |= ADC_CFGR_ALIGN;
     }
     cfgr |= ADC_CFGR_DMAEN;
@@ -233,7 +234,7 @@ bool PHAL_ADC_internalInitializeDma(PHAL_ADC_Handle_t *handle, ADC_TypeDef *adc)
     return route != NULL && PHAL_DMA_internalInit(&handle->dma, route);
 }
 
-bool PHAL_ADC_internalEnable(PHAL_ADC_Handle_t *handle, const PHAL_ADC_Config_t *config) {
+bool PHAL_ADC_internalEnable(PHAL_ADC_Handle_t *handle, const PHAL_ADC_InternalConfig_t *config) {
     ADC_TypeDef *adc = config->instance;
     adc->ISR = ADC_ISR_ADRDY | ADC_ISR_EOC | ADC_ISR_EOS | ADC_ISR_OVR;
     adc->CR |= ADC_CR_ADEN;

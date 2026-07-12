@@ -12,7 +12,7 @@
  * channel numbers, and request IDs are intentionally private to PHAL.
  */
 typedef struct PHAL_DMA_Handle {
-    uintptr_t _storage[8];
+    uintptr_t _storage[8]; /**< Private aligned storage; callers must not inspect or modify it. */
 } PHAL_DMA_Handle_t;
 
 /**
@@ -39,5 +39,16 @@ bool PHAL_DMA_busy(const PHAL_DMA_Handle_t *handle);
  * the handle and may be started again.
  */
 bool PHAL_DMA_abort(PHAL_DMA_Handle_t *handle);
+
+/**
+ * @brief Report completion or failure of a DMA channel transfer.
+ * @param handle DMA handle whose transfer generated the interrupt.
+ * @param success true for transfer-complete; false for transfer error.
+ * @note Weak default callback. Peripheral drivers still receive their private
+ *       completion hook before this public notification.
+ * @note Executes in DMA interrupt context and repeats for each completed buffer
+ *       when circular mode is active.
+ */
+void PHAL_DMA_transferCompleteCallback(PHAL_DMA_Handle_t *handle, bool success);
 
 #endif

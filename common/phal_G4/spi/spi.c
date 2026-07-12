@@ -1,15 +1,25 @@
 #include "common/phal_G4/spi/spi_internal.h"
 
-#include <string.h>
-
 #include "common/phal_G4/rcc/rcc.h"
 
-#define PHAL_SPI_COMPAT_TRANSFER_MAX 256U
-
 bool PHAL_SPI_init(PHAL_SPI_Handle_t *handle, const PHAL_SPI_Config_t *config) {
-    if (handle == NULL || !PHAL_SPI_internalValidateConfig(config)
-        || !PHAL_SPI_internalConfigureRegisters(config)
-        || !PHAL_SPI_internalInitializeDma(handle, config->instance)) {
+    if (handle == NULL || config == NULL) {
+        return false;
+    }
+    const PHAL_SPI_InternalConfig_t hardware_config = {
+        .instance = config->instance,
+        .mode = config->mode,
+        .data_rate_hz = config->data_rate_hz,
+        .frame_size_bits = 8U,
+        .clock_polarity_high = false,
+        .clock_phase_second_edge = false,
+        .software_chip_select = config->software_chip_select,
+        .chip_select_port = config->chip_select_port,
+        .chip_select_pin = config->chip_select_pin,
+    };
+    if (!PHAL_SPI_internalValidateConfig(&hardware_config)
+        || !PHAL_SPI_internalConfigureRegisters(&hardware_config)
+        || !PHAL_SPI_internalInitializeDma(handle, hardware_config.instance)) {
         return false;
     }
 
@@ -40,7 +50,7 @@ bool PHAL_SPI_transfer(
     return true;
 }
 
-bool PHAL_SPI_transferBlocking(
+bool PHAL_SPI_transfer_noDMA(
     PHAL_SPI_Handle_t *handle,
     const uint8_t *tx_data,
     uint8_t *rx_data,
@@ -78,29 +88,6 @@ bool PHAL_SPI_abort(PHAL_SPI_Handle_t *handle) {
     return stopped;
 }
 
-bool PHAL_SPI_transfer_noDMA(
-    PHAL_SPI_Handle_t *handle,
-    const uint8_t *out_data,
-    uint32_t tx_length,
-    uint32_t rx_length,
-    uint8_t *in_data
-) {
-    const uint64_t total64 = (uint64_t)tx_length + rx_length;
-    if (total64 == 0U || total64 > UINT16_MAX) {
-        return false;
-    }
-
-    const size_t total = (size_t)total64;
-    if (total > PHAL_SPI_COMPAT_TRANSFER_MAX) {
-        return false;
-    }
-    uint8_t tx_buffer[PHAL_SPI_COMPAT_TRANSFER_MAX] = {0};
-    if (out_data != NULL && tx_length != 0U) {
-        memcpy(tx_buffer, out_data, tx_length);
-    }
-    return PHAL_SPI_transferBlocking(handle, tx_buffer, in_data, total, 1000000U);
-}
-
 bool PHAL_SPI_readRegister(
     PHAL_SPI_Handle_t *handle,
     uint8_t address,
@@ -112,11 +99,12 @@ bool PHAL_SPI_readRegister(
     }
     uint8_t tx_data[3] = {(uint8_t)(0x80U | (address & 0x7FU)), 0U, 0U};
     uint8_t rx_data[3] = {0U, 0U, 0U};
-    const uint32_t rx_length = skip_dummy ? 1U : 2U;
-    if (!PHAL_SPI_transfer_noDMA(handle, tx_data, 1U, rx_length, rx_data)) {
+    const size_t transfer_length = skip_dummy ? 2U : 3U;
+    if (!PHAL_SPI_transfer_noDMA(
+            handle, tx_data, rx_data, transfer_length, 1000000U)) {
         return false;
     }
-    *value = skip_dummy ? rx_data[1] : rx_data[2];
+    *value = rx_data[transfer_length - 1U];
     return true;
 }
 
@@ -126,7 +114,15 @@ bool PHAL_SPI_writeRegister(
     uint8_t write_data
 ) {
     const uint8_t tx_data[2] = {(uint8_t)(address & 0x7FU), write_data};
-    return PHAL_SPI_transferBlocking(handle, tx_data, NULL, 2U, 1000000U);
+    return PHAL_SPI_transfer_noDMA(handle, tx_data, NULL, 2U, 1000000U);
+}
+
+__attribute__((weak)) void PHAL_SPI_transferCompleteCallback(
+    PHAL_SPI_Handle_t *handle,
+    bool success
+) {
+    (void)handle;
+    (void)success;
 }
 
 bool PHAL_SPI_forceReset(PHAL_SPI_Handle_t *handle) {
@@ -151,21 +147,4 @@ bool PHAL_SPI_forceReset(PHAL_SPI_Handle_t *handle) {
     handle->busy = false;
     handle->transfer_success = false;
     return true;
-}
-
-uint8_t PHAL_SPI_readByte(PHAL_SPI_Handle_t *handle, uint8_t address, bool skip_dummy) {
-    uint8_t value = 0U;
-    (void)PHAL_SPI_readRegister(handle, address, skip_dummy, &value);
-    return value;
-}
-
-uint8_t PHAL_SPI_writeByte(PHAL_SPI_Handle_t *handle, uint8_t address, uint8_t write_data) {
-    const uint8_t tx_data[2] = {(uint8_t)(address & 0x7FU), write_data};
-    uint8_t rx_data[2] = {0U, 0U};
-    return PHAL_SPI_transferBlocking(handle, tx_data, rx_data, 2U, 1000000U)
-        ? rx_data[1] : 0U;
-}
-
-void PHAL_SPI_ForceReset(PHAL_SPI_Handle_t *handle) {
-    (void)PHAL_SPI_forceReset(handle);
 }
