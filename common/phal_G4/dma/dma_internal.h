@@ -62,8 +62,9 @@ bool PHAL_DMA_internalStart(
     void *context
 );
 
+bool PHAL_DMA_internalDisable(PHAL_DMA_State_t *state);
+void PHAL_DMA_internalClearTransfer(PHAL_DMA_State_t *state);
 void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel);
-bool PHAL_DMA_internalAbort(PHAL_DMA_State_t *state);
 
 size_t PHAL_DMA_internalRemaining(const PHAL_DMA_Handle_t *handle);
 
