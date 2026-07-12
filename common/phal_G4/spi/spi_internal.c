@@ -83,16 +83,13 @@ static bool select_baud_rate(uint32_t input_hz, uint32_t requested_hz, uint32_t 
     return false;
 }
 
-bool PHAL_SPI_internalConfigure(
-    PHAL_SPI_Handle_t *handle,
-    const PHAL_SPI_Config_t *config
-) {
-    if (handle == NULL || config == NULL || !supported_instance(config->instance)
-        || config->mode > PHAL_SPI_MODE_SLAVE || config->frame_size_bits != 8U
-        || (config->software_chip_select && config->chip_select_port == NULL)) {
-        return false;
-    }
+bool PHAL_SPI_internalValidateConfig(const PHAL_SPI_Config_t *config) {
+    return config != NULL && supported_instance(config->instance)
+        && config->mode <= PHAL_SPI_MODE_SLAVE && config->frame_size_bits == 8U
+        && (!config->software_chip_select || config->chip_select_port != NULL);
+}
 
+bool PHAL_SPI_internalConfigureRegisters(const PHAL_SPI_Config_t *config) {
     const uint32_t input_hz = config->instance == SPI1
         ? PHAL_RCC_apb2ClockHz()
         : PHAL_RCC_apb1ClockHz();
@@ -144,8 +141,12 @@ bool PHAL_SPI_internalConfigure(
     }
     config->instance->CR2 = cr2;
 
-    const PHAL_DMA_Route_t *rx_route = PHAL_DMA_internalSpiRxRoute(config->instance);
-    const PHAL_DMA_Route_t *tx_route = PHAL_DMA_internalSpiTxRoute(config->instance);
+    return true;
+}
+
+bool PHAL_SPI_internalInitializeDma(PHAL_SPI_Handle_t *handle, SPI_TypeDef *instance) {
+    const PHAL_DMA_Route_t *rx_route = PHAL_DMA_internalSpiRxRoute(instance);
+    const PHAL_DMA_Route_t *tx_route = PHAL_DMA_internalSpiTxRoute(instance);
     if (rx_route == NULL || tx_route == NULL) {
         return false;
     }
@@ -156,7 +157,13 @@ bool PHAL_SPI_internalConfigure(
         (void)PHAL_DMA_internalRelease(&handle->rx_dma);
         return false;
     }
+    return true;
+}
 
+void PHAL_SPI_internalInitializeHandle(
+    PHAL_SPI_Handle_t *handle,
+    const PHAL_SPI_Config_t *config
+) {
     handle->instance = config->instance;
     handle->chip_select_port = config->chip_select_port;
     handle->chip_select_pin = config->chip_select_pin;
@@ -165,64 +172,90 @@ bool PHAL_SPI_internalConfigure(
     handle->busy = false;
     handle->transfer_success = false;
     set_chip_select(handle, false);
-    return true;
 }
 
 static void spi_tx_complete(void *context, bool success);
 static void spi_rx_complete(void *context, bool success);
 
-bool PHAL_SPI_internalStart(
-    PHAL_SPI_Handle_t *handle,
-    const uint8_t *tx_data,
-    uint8_t *rx_data,
+bool PHAL_SPI_internalValidateTransfer(
+    const PHAL_SPI_Handle_t *handle,
     size_t length
 ) {
+    return handle != NULL && handle->initialized && handle->instance != NULL
+        && !handle->busy && length != 0U && length <= UINT16_MAX;
+}
+
+bool PHAL_SPI_internalPrepareTransfer(PHAL_SPI_Handle_t *handle) {
     PHAL_SPI_TransferState_t *state = state_for_handle(handle, true);
     if (state == NULL) {
         return false;
     }
     state->tx_complete = false;
     state->rx_complete = false;
-
     set_chip_select(handle, true);
     handle->busy = true;
     handle->transfer_success = false;
+    return true;
+}
 
-    if (!PHAL_DMA_internalStart(
-            &handle->rx_dma,
-            (volatile void *)&handle->instance->DR,
-            rx_data != NULL ? (void *)rx_data : (void *)&dma_discard,
-            length,
-            rx_data != NULL,
-            false,
-            spi_rx_complete,
-            handle)) {
-        handle->busy = false;
-        set_chip_select(handle, false);
-        state->registered = false;
-        return false;
-    }
+bool PHAL_SPI_internalStartReceiveDma(
+    PHAL_SPI_Handle_t *handle,
+    uint8_t *rx_data,
+    size_t length
+) {
+    return PHAL_DMA_internalStart(
+        &handle->rx_dma,
+        (volatile void *)&handle->instance->DR,
+        rx_data != NULL ? (void *)rx_data : (void *)&dma_discard,
+        length,
+        rx_data != NULL,
+        false,
+        spi_rx_complete,
+        handle);
+}
 
-    if (!PHAL_DMA_internalStart(
-            &handle->tx_dma,
-            (volatile void *)&handle->instance->DR,
-            tx_data != NULL ? (void *)tx_data : (void *)&dma_zero,
-            length,
-            tx_data != NULL,
-            false,
-            spi_tx_complete,
-            handle)) {
-        (void)PHAL_DMA_abort(&handle->rx_dma);
-        handle->busy = false;
-        set_chip_select(handle, false);
-        state->registered = false;
-        return false;
-    }
+bool PHAL_SPI_internalStartTransmitDma(
+    PHAL_SPI_Handle_t *handle,
+    const uint8_t *tx_data,
+    size_t length
+) {
+    return PHAL_DMA_internalStart(
+        &handle->tx_dma,
+        (volatile void *)&handle->instance->DR,
+        tx_data != NULL ? (void *)tx_data : (void *)&dma_zero,
+        length,
+        tx_data != NULL,
+        false,
+        spi_tx_complete,
+        handle);
+}
 
+void PHAL_SPI_internalEnableTransfer(PHAL_SPI_Handle_t *handle) {
     /* DMA channels are armed while SPI request generation remains masked. */
     handle->instance->CR2 |= SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN;
     handle->instance->CR1 |= SPI_CR1_SPE;
-    return true;
+}
+
+void PHAL_SPI_internalCancelTransferSetup(PHAL_SPI_Handle_t *handle, bool abort_receive) {
+    if (abort_receive) {
+        (void)PHAL_DMA_abort(&handle->rx_dma);
+    }
+    handle->busy = false;
+    set_chip_select(handle, false);
+
+    PHAL_SPI_TransferState_t *state = state_for_handle(handle, false);
+    if (state != NULL) {
+        state->registered = false;
+    }
+}
+
+bool PHAL_SPI_internalValidateHandle(const PHAL_SPI_Handle_t *handle) {
+    return handle != NULL && handle->initialized && handle->instance != NULL;
+}
+
+void PHAL_SPI_internalDisablePeripheral(PHAL_SPI_Handle_t *handle) {
+    handle->instance->CR2 &= ~(SPI_CR2_RXDMAEN | SPI_CR2_TXDMAEN);
+    handle->instance->CR1 &= ~SPI_CR1_SPE;
 }
 
 bool PHAL_SPI_internalTeardown(PHAL_SPI_Handle_t *handle, bool success) {
