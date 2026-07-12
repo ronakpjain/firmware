@@ -35,7 +35,7 @@ static constexpr uint32_t GIT_HASH = 0x{{ ctx.context.version }};
 typedef {{ ctx.peripheral_entries[0].bus_type }} CAN_bus_t;
 
 {% for periph in ctx.peripheral_entries %}
-void {{ periph.enqueue_func }}(CanMsgTypeDef_t *msg);
+void {{ periph.enqueue_func }}({% if periph.is_fdcan %}PHAL_CAN_Message_t{% else %}CanMsgTypeDef_t{% endif %} *msg);
 {% endfor %}
 
 // Scaling Macros

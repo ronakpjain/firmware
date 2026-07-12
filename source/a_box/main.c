@@ -145,13 +145,17 @@ int main(void) {
         HardFault_Handler();
     }
 
-    if (false == PHAL_FDCAN_init(FDCAN1, false, VCAN_BAUD_RATE)) {
+    if (!PHAL_CAN_init(&PHAL_CAN1, &(PHAL_CAN_Config_t){
+            .bit_rate = VCAN_BAUD_RATE, .loopback = false})) {
         HardFault_Handler();
     }
-    if (false == PHAL_FDCAN_init(FDCAN2, false, CCAN_BAUD_RATE)) {
+    if (!PHAL_CAN_init(&PHAL_CAN2, &(PHAL_CAN_Config_t){
+            .bit_rate = CCAN_BAUD_RATE, .loopback = false})) {
         HardFault_Handler();
     }
-    CAN_init();
+    if (!CAN_init()) {
+        HardFault_Handler();
+    }
 
     // Kernel initalization
     osKernelInitialize();

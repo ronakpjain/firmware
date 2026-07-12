@@ -1,7 +1,7 @@
 // RX Dispatcher
 static inline void CAN_rx_dispatcher(uint32_t id, uint8_t *data, uint8_t len, CAN_bus_t *bus) {
     {% for rx_periph in ctx.rx_peripheral_entries %}
-    {{ "if" if loop.first else "else if" }} (bus == {{ rx_periph.peripheral.name }}) {
+    {{ "if" if loop.first else "else if" }} (bus == {% if rx_periph.peripheral.is_fdcan %}&{{ rx_periph.peripheral.handle_symbol }}{% else %}{{ rx_periph.peripheral.handle_symbol }}{% endif %}) {
         switch (id) {
             {% for entry in rx_periph.entries %}
             case {{ entry.msg.macro_name }}_MSG_ID: {

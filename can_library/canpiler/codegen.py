@@ -34,6 +34,8 @@ class TxEntry:
     bus_name: str
     enqueue_func: str
     codecs: List[SignalCodec]
+    is_fdcan: bool
+    handle_symbol: str
 
 
 @dataclass
@@ -51,6 +53,8 @@ class PeripheralContext:
     queue_name: str
     bus_type: str
     arch_define: str
+    is_fdcan: bool
+    handle_symbol: str
 
 
 @dataclass
@@ -217,11 +221,15 @@ def build_peripheral_contexts(peripherals: List[str]) -> List[PeripheralContext]
     entries = []
     for periph in peripherals:
         if periph.startswith("FDCAN"):
-            bus_type = "FDCAN_GlobalTypeDef"
+            bus_type = "PHAL_CAN_Handle_t"
             arch_define = "STM32G474xx"
+            is_fdcan = True
+            handle_symbol = f"PHAL_CAN{periph[-1]}"
         elif periph.startswith("CAN"):
             bus_type = "CAN_TypeDef"
             arch_define = "STM32F407xx"
+            is_fdcan = False
+            handle_symbol = periph
         else:
             raise ValueError(f"Unsupported CAN peripheral: {periph}")
 
@@ -231,6 +239,8 @@ def build_peripheral_contexts(peripherals: List[str]) -> List[PeripheralContext]
             queue_name=f"can{periph[-1]}_tx_queue",
             bus_type=bus_type,
             arch_define=arch_define,
+            is_fdcan=is_fdcan,
+            handle_symbol=handle_symbol,
         ))
     return entries
 
@@ -280,6 +290,9 @@ def build_node_render_context(node: Node, context: SystemContext) -> NodeRenderC
                     bus_name=bus_name,
                     codecs=[build_signal_codec(sig, "rx") for sig in msg.signals],
                 ))
+        periph_context = next(
+            entry for entry in peripheral_entries if entry.name == bus.peripheral
+        )
         for msg in bus.tx_messages:
             tx_entries.append(TxEntry(
                 msg=msg,
@@ -287,6 +300,8 @@ def build_node_render_context(node: Node, context: SystemContext) -> NodeRenderC
                 bus_name=bus_name,
                 enqueue_func=build_enqueue_func(bus.peripheral),
                 codecs=[build_signal_codec(sig, "tx") for sig in msg.signals],
+                is_fdcan=periph_context.is_fdcan,
+                handle_symbol=periph_context.handle_symbol,
             ))
 
     return NodeRenderContext(

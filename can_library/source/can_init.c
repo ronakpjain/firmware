@@ -125,15 +125,15 @@ static bool CAN_setup_filters(void) {
 
 static bool CAN_setup_filters(void) {
 #ifdef USE_FDCAN1
-    FDCAN1_set_filters();
+    if (!FDCAN1_set_filters()) return false;
 #endif
 
 #ifdef USE_FDCAN2
-    FDCAN2_set_filters();
+    if (!FDCAN2_set_filters()) return false;
 #endif
 
 #ifdef USE_FDCAN3
-    FDCAN3_set_filters();
+    if (!FDCAN3_set_filters()) return false;
 #endif
 
     return true;
