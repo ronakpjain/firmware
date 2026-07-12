@@ -179,15 +179,16 @@ int main(void) {
 
 void bms_task(void) {
     // IMD
-    bool imd_faulted = PHAL_readGPIO(IMD_STATUS_PORT, IMD_STATUS_PIN) == false;
-    update_fault(FAULT_ID_IMD, imd_faulted);
+    bool imd_status = false;
+    (void)PHAL_GPIO_read(IMD_STATUS_PORT, IMD_STATUS_PIN, &imd_status);
+    update_fault(FAULT_ID_IMD, !imd_status);
 
     // ADBMS
     adbms_periodic(&g_bms, MIN_V_FOR_BALANCE, MIN_DELTA_FOR_BALANCE);
 
     bool is_bms_disconnected = g_bms.state != ADBMS_STATE_CONNECTED;
     update_fault(FAULT_ID_BMS_DISCONNECTED, is_bms_disconnected);
-    PHAL_writeGPIO(BMS_SDC_CTRL_PORT, BMS_SDC_CTRL_PIN, is_clear(FAULT_ID_BMS_DISCONNECTED));
+    PHAL_GPIO_write(BMS_SDC_CTRL_PORT, BMS_SDC_CTRL_PIN, is_clear(FAULT_ID_BMS_DISCONNECTED));
 
     // Pack voltage checks
     update_fault(FAULT_ID_PACK_FULL, g_bms.sum_voltage);

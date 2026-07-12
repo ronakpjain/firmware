@@ -1,7 +1,7 @@
 /**
  * @file gpio.h
  * @author Adam Busch (busch8@purdue.edu)
- * @brief GPIO Driver for STM32L432 Devices
+ * @brief GPIO driver for STM32G474 devices.
  * @version 0.1
  * @date 2021-09-20
  *
@@ -13,64 +13,62 @@
 #ifndef __PHAL_G4_GPIO_H__
 #define __PHAL_G4_GPIO_H__
 
+#include <stddef.h>
+
 #include "common/phal_G4/phal_G4.h"
 
 /**
  * @brief Configuration type for GPIO Pin
  */
 typedef enum {
-    GPIO_TYPE_INPUT  = 0b00, /* Pin input mode */
-    GPIO_TYPE_OUTPUT = 0b01, /* Pin output mode */
-    GPIO_TYPE_AF     = 0b10, /* Pin alternate function mode */
-    GPIO_TYPE_ANALOG = 0b11, /* Pin alternate function mode */
+    GPIO_TYPE_INPUT  = 0b00, /**< Pin input mode. */
+    GPIO_TYPE_OUTPUT = 0b01, /**< Pin output mode. */
+    GPIO_TYPE_AF     = 0b10, /**< Pin alternate-function mode. */
+    GPIO_TYPE_ANALOG = 0b11, /**< Pin analog mode. */
 } GPIOPinType_t;
 
 /**
  * @brief Slew rate control for output pins
  */
 typedef enum {
-    GPIO_OUTPUT_LOW_SPEED   = 0b00, /* Slew rate control, max 8Mhz */
-    GPIO_OUTPUT_MED_SPEED   = 0b01, /* Slew rate control, max 50Mhz */
-    GPIO_OUTPUT_HIGH_SPEED  = 0b10, /* Slew rate control, max 100Mhz */
-    GPIO_OUTPUT_ULTRA_SPEED = 0b11, /* Slew rate control, max 180Mhz */
+    GPIO_OUTPUT_LOW_SPEED   = 0b00, /**< Low slew rate. */
+    GPIO_OUTPUT_MED_SPEED   = 0b01, /**< Medium slew rate. */
+    GPIO_OUTPUT_HIGH_SPEED  = 0b10, /**< High slew rate. */
+    GPIO_OUTPUT_ULTRA_SPEED = 0b11, /**< Very-high slew rate. */
 } GPIOOutputSpeed_t;
 
 /**
  * @brief Output drive mode selection
  */
 typedef enum {
-    GPIO_OUTPUT_PUSH_PULL  = 0b0, /* Drive the output pin high and low */
-    GPIO_OUTPUT_OPEN_DRAIN = 0b1, /* Drive the output pin low, high-z otherwise */
+    GPIO_OUTPUT_PUSH_PULL  = 0b0, /**< Drive the output actively high and low. */
+    GPIO_OUTPUT_OPEN_DRAIN = 0b1, /**< Drive low or leave the output high impedance. */
 } GPIOOutputPull_t;
 
 /**
  * @brief Enable internal pullup/down resistors
  */
 typedef enum {
-    GPIO_INPUT_OPEN_DRAIN = 0b00, /* No internal pull up/down */
-    GPIO_INPUT_PULL_UP    = 0b01, /* Weak internal pull-up enabled */
-    GPIO_INPUT_PULL_DOWN  = 0b10, /* Weak internal pull-down enabled */
+    GPIO_INPUT_OPEN_DRAIN = 0b00, /**< Disable internal pull resistors. */
+    GPIO_INPUT_PULL_UP    = 0b01, /**< Enable the weak internal pull-up. */
+    GPIO_INPUT_PULL_DOWN  = 0b10, /**< Enable the weak internal pull-down. */
 } GPIOInputPull_t;
 
 /**
- * @brief Configuration entry for GPIO initilization
+ * @brief Configuration entry for GPIO initialization.
  */
 typedef struct {
-    GPIO_TypeDef *bank; /* GPIO Bank for configuration */
-    uint8_t pin;        /* Pin Number for configruation */
-    GPIOPinType_t type; /* Output type of pin */
+    GPIO_TypeDef *bank; /**< GPIO register bank. */
+    uint8_t pin;        /**< Pin number from 0 through 15. */
+    GPIOPinType_t type; /**< Pin operating mode. */
 
+    /** Mode-specific pin settings. */
     struct {
-        // INPUT ONLY FIELDS
-        GPIOInputPull_t pull; /* Push/Pull selection */
-
-        // OUTPUT ONLY FIELDS
-        GPIOOutputSpeed_t ospeed; /* Output speed (slew rate) */
-        GPIOOutputPull_t otype;   /* Output push/pull */
-
-        // AF ONLY FIELDS
-        uint8_t af_num; /* Anternate function type */
-    } config;           /* Type specific configuration for pins */
+        GPIOInputPull_t pull;     /**< Input and alternate-function pull selection. */
+        GPIOOutputSpeed_t ospeed; /**< Output and alternate-function slew rate. */
+        GPIOOutputPull_t otype;   /**< Output and alternate-function driver type. */
+        uint8_t af_num;           /**< Alternate-function number from 0 through 15. */
+    } config;
 } GPIOInitConfig_t;
 
 /**
@@ -145,50 +143,80 @@ typedef struct {
 */
 
 /**
- * @brief Initilize the GPIO perpheral given a list of configuration fields for all of the GPIO pins.
- *        Will also enable the GPIO RCC clock
+ * @brief Initialize GPIO pins from a list of semantic configurations.
+ *
+ * Enables each referenced GPIO port clock and programs the pin mode, pull,
+ * output type, speed, and alternate-function fields selected by the entry.
  *
  * @param config A list of GPIOs to config
  * @param config_len Number of GPIOs in the config list
  * @return true All GPIOs were a valid configuration format
  * @return false Some of the GPIOs had an invalid configuration format
  */
-bool PHAL_initGPIO(const GPIOInitConfig_t config[], uint8_t config_len);
+bool PHAL_GPIO_init(const GPIOInitConfig_t config[], uint8_t config_len);
 
 /**
  * @brief Read one GPIO input value.
- *
- * @param port Supported GPIO port.
+ * @param port GPIO port register block.
  * @param pin Pin number in the range 0..15.
  * @param value Destination for the sampled IDR value.
- * @return true The port, pin, and destination were valid.
- * @return false Invalid argument.
- * @note This function does not block and configures no peripheral state.
+ * @return true The arguments were valid.
+ * @return false A pointer was NULL or the pin was outside 0..15.
  */
-bool PHAL_GPIO_read(GPIO_TypeDef *port, uint8_t pin, bool *value);
+static inline bool PHAL_GPIO_read(GPIO_TypeDef *port, uint8_t pin, bool *value) {
+    if (port == NULL || value == NULL || pin > 15U) {
+        return false;
+    }
+    *value = ((port->IDR >> pin) & 1U) != 0U;
+    return true;
+}
 
 /**
  * @brief Atomically set or reset one GPIO output.
- *
- * @param port Supported GPIO port.
+ * @param port GPIO port register block.
  * @param pin Pin number in the range 0..15.
  * @param value true sets the pin; false resets it.
- * @return true The port and pin were valid.
- * @return false Invalid argument.
- * @note This function does not block and writes BSRR by direct assignment.
+ * @return true The arguments were valid.
+ * @return false The port was NULL or the pin was outside 0..15.
  */
-bool PHAL_GPIO_write(GPIO_TypeDef *port, uint8_t pin, bool value);
+static inline bool PHAL_GPIO_write(GPIO_TypeDef *port, uint8_t pin, bool value) {
+    if (port == NULL || pin > 15U) {
+        return false;
+    }
+    port->BSRR = 1UL << (value ? pin : pin + 16U);
+    return true;
+}
 
 /**
  * @brief Atomically toggle one GPIO output latch.
- *
- * @param port Supported GPIO port.
+ * @param port GPIO port register block.
  * @param pin Pin number in the range 0..15.
- * @return true The port and pin were valid.
- * @return false Invalid argument.
+ * @return true The arguments were valid.
+ * @return false The port was NULL or the pin was outside 0..15.
  * @note The ODR latch, rather than the external IDR level, determines the next value.
  */
-bool PHAL_GPIO_toggle(GPIO_TypeDef *port, uint8_t pin);
+static inline bool PHAL_GPIO_toggle(GPIO_TypeDef *port, uint8_t pin) {
+    if (port == NULL || pin > 15U) {
+        return false;
+    }
+    return PHAL_GPIO_write(port, pin, ((port->ODR >> pin) & 1U) == 0U);
+}
+
+/** @deprecated Shared F4/G4 compatibility API; prefer PHAL_GPIO_read(). */
+static inline bool PHAL_readGPIO(GPIO_TypeDef *port, uint8_t pin) {
+    bool value = false;
+    return PHAL_GPIO_read(port, pin, &value) && value;
+}
+
+/** @deprecated Shared F4/G4 compatibility API; prefer PHAL_GPIO_write(). */
+static inline void PHAL_writeGPIO(GPIO_TypeDef *port, uint8_t pin, bool value) {
+    (void)PHAL_GPIO_write(port, pin, value);
+}
+
+/** @deprecated Shared F4/G4 compatibility API; prefer PHAL_GPIO_toggle(). */
+static inline void PHAL_toggleGPIO(GPIO_TypeDef *port, uint8_t pin) {
+    (void)PHAL_GPIO_toggle(port, pin);
+}
 
 #define GPIO_INIT_USART3TX_PC10 \
     GPIO_INIT_AF(GPIOC, \
@@ -347,10 +375,5 @@ bool PHAL_GPIO_toggle(GPIO_TypeDef *port, uint8_t pin);
 
 #define GPIO_INIT_SPI2NSS_CET_PA8 \
     GPIO_INIT_AF(GPIOA, 8, 5, GPIO_OUTPUT_ULTRA_SPEED, GPIO_OUTPUT_PUSH_PULL, GPIO_INPUT_OPEN_DRAIN)
-
-/** Deprecated source-compatibility wrappers; migrate to PHAL_GPIO_* functions. */
-bool PHAL_readGPIO(GPIO_TypeDef *port, uint8_t pin);
-void PHAL_writeGPIO(GPIO_TypeDef *port, uint8_t pin, bool value);
-void PHAL_toggleGPIO(GPIO_TypeDef *port, uint8_t pin);
 
 #endif // __PHAL_G4_GPIO_H__

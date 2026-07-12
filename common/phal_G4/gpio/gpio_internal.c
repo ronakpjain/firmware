@@ -7,7 +7,7 @@ static bool supported_port(GPIO_TypeDef *port) {
         || port == GPIOE || port == GPIOF || port == GPIOG;
 }
 
-static void enable_port_clock(GPIO_TypeDef *port) {
+void PHAL_GPIO_internalEnablePortClock(GPIO_TypeDef *port) {
     if (port == GPIOA) RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
     if (port == GPIOB) RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
     if (port == GPIOC) RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
@@ -66,7 +66,7 @@ static void configure_mode(GPIO_TypeDef *port, uint8_t pin, GPIOPinType_t type) 
         | (((uint32_t)type & GPIO_MODER_MODE0_Msk) << shift);
 }
 
-bool PHAL_GPIO_internalConfigure(const GPIOInitConfig_t *config, uint8_t config_len) {
+bool PHAL_GPIO_internalValidateConfig(const GPIOInitConfig_t *config, uint8_t config_len) {
     if (config == NULL && config_len != 0U) {
         return false;
     }
@@ -76,66 +76,44 @@ bool PHAL_GPIO_internalConfigure(const GPIOInitConfig_t *config, uint8_t config_
             return false;
         }
     }
-
-    for (uint8_t i = 0U; i < config_len; ++i) {
-        const GPIOInitConfig_t *entry = &config[i];
-        GPIO_TypeDef *port = entry->bank;
-        const uint8_t pin = entry->pin;
-        enable_port_clock(port);
-
-        switch (entry->type) {
-            case GPIO_TYPE_OUTPUT:
-                configure_output_fields(port, pin, entry->config.ospeed, entry->config.otype);
-                configure_pull(port, pin, GPIO_INPUT_OPEN_DRAIN);
-                configure_mode(port, pin, GPIO_TYPE_OUTPUT);
-                break;
-            case GPIO_TYPE_INPUT:
-                configure_pull(port, pin, entry->config.pull);
-                configure_mode(port, pin, GPIO_TYPE_INPUT);
-                break;
-            case GPIO_TYPE_AF: {
-                configure_output_fields(port, pin, entry->config.ospeed, entry->config.otype);
-                configure_pull(port, pin, entry->config.pull);
-                const uint8_t afr_index = pin / 8U;
-                const uint8_t afr_shift = (uint8_t)(4U * (pin % 8U));
-                port->AFR[afr_index] = (port->AFR[afr_index]
-                    & ~(GPIO_AFRL_AFSEL0_Msk << afr_shift))
-                    | (((uint32_t)entry->config.af_num & GPIO_AFRL_AFSEL0_Msk) << afr_shift);
-                configure_mode(port, pin, GPIO_TYPE_AF);
-                break;
-            }
-            case GPIO_TYPE_ANALOG:
-                configure_pull(port, pin, GPIO_INPUT_OPEN_DRAIN);
-                configure_mode(port, pin, GPIO_TYPE_ANALOG);
-                break;
-            default:
-                return false;
-        }
-    }
     return true;
 }
 
-bool PHAL_GPIO_internalRead(GPIO_TypeDef *port, uint8_t pin, bool *value) {
-    if (!supported_port(port) || pin >= 16U || value == NULL) {
-        return false;
-    }
-    *value = ((port->IDR >> pin) & 1U) != 0U;
-    return true;
+bool PHAL_GPIO_internalValidatePin(GPIO_TypeDef *port, uint8_t pin) {
+    return supported_port(port) && pin < 16U;
 }
 
-bool PHAL_GPIO_internalWrite(GPIO_TypeDef *port, uint8_t pin, bool value) {
-    if (!supported_port(port) || pin >= 16U) {
-        return false;
-    }
-    port->BSRR = value ? (1UL << pin) : (1UL << (pin + 16U));
-    return true;
+void PHAL_GPIO_internalConfigureOutput(const GPIOInitConfig_t *entry) {
+    configure_output_fields(
+        entry->bank,
+        entry->pin,
+        entry->config.ospeed,
+        entry->config.otype);
+    configure_pull(entry->bank, entry->pin, GPIO_INPUT_OPEN_DRAIN);
+    configure_mode(entry->bank, entry->pin, GPIO_TYPE_OUTPUT);
 }
 
-bool PHAL_GPIO_internalToggle(GPIO_TypeDef *port, uint8_t pin) {
-    if (!supported_port(port) || pin >= 16U) {
-        return false;
-    }
-    const bool current = ((port->ODR >> pin) & 1U) != 0U;
-    port->BSRR = current ? (1UL << (pin + 16U)) : (1UL << pin);
-    return true;
+void PHAL_GPIO_internalConfigureInput(const GPIOInitConfig_t *entry) {
+    configure_pull(entry->bank, entry->pin, entry->config.pull);
+    configure_mode(entry->bank, entry->pin, GPIO_TYPE_INPUT);
+}
+
+void PHAL_GPIO_internalConfigureAlternateFunction(const GPIOInitConfig_t *entry) {
+    configure_output_fields(
+        entry->bank,
+        entry->pin,
+        entry->config.ospeed,
+        entry->config.otype);
+    configure_pull(entry->bank, entry->pin, entry->config.pull);
+    const uint8_t afr_index = entry->pin / 8U;
+    const uint8_t afr_shift = (uint8_t)(4U * (entry->pin % 8U));
+    entry->bank->AFR[afr_index] = (entry->bank->AFR[afr_index]
+        & ~(GPIO_AFRL_AFSEL0_Msk << afr_shift))
+        | (((uint32_t)entry->config.af_num & GPIO_AFRL_AFSEL0_Msk) << afr_shift);
+    configure_mode(entry->bank, entry->pin, GPIO_TYPE_AF);
+}
+
+void PHAL_GPIO_internalConfigureAnalog(const GPIOInitConfig_t *entry) {
+    configure_pull(entry->bank, entry->pin, GPIO_INPUT_OPEN_DRAIN);
+    configure_mode(entry->bank, entry->pin, GPIO_TYPE_ANALOG);
 }

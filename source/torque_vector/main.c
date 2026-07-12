@@ -113,8 +113,8 @@ int main(void) {
 
     initialize_calibration();
 
-    PHAL_writeGPIO(ROVER_RESET_PORT, ROVER_RESET_PIN, 1);
-    PHAL_writeGPIO(BASE_RESET_PORT, BASE_RESET_PIN, 1);
+    PHAL_GPIO_write(ROVER_RESET_PORT, ROVER_RESET_PIN, 1);
+    PHAL_GPIO_write(BASE_RESET_PORT, BASE_RESET_PIN, 1);
 
     control_init();
 

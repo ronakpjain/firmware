@@ -47,11 +47,11 @@ static constexpr uint32_t IMU_CONFIG_TIME_MS = 12'000; // "at least 10 seconds"
 void config_imu() {
     if (OS_TICKS >= IMU_CONFIG_TIME_MS) {
         // set LED
-        PHAL_writeGPIO(CONNECTION_LED_PORT, CONNECTION_LED_PIN, 1);
+        PHAL_GPIO_write(CONNECTION_LED_PORT, CONNECTION_LED_PIN, 1);
         osThreadExit();
     }
 
-    PHAL_toggleGPIO(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN);
+    PHAL_GPIO_toggle(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN);
     CAN_SEND_IZZE_IMU_config(
         IZZE_IMU_PROGRAMMING_CONSTANT,
         NEW_CAN_BASE_ID,
@@ -66,13 +66,13 @@ int main() {
     if (!PHAL_RCC_configure(&clock_config)) {
         HardFault_Handler();
     }
-    if (!PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (!PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
 
-    PHAL_writeGPIO(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN, 0);
-    PHAL_writeGPIO(ERROR_LED_PORT, ERROR_LED_PIN, 0);
-    PHAL_writeGPIO(CONNECTION_LED_PORT, CONNECTION_LED_PIN, 0);
+    PHAL_GPIO_write(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN, 0);
+    PHAL_GPIO_write(ERROR_LED_PORT, ERROR_LED_PIN, 0);
+    PHAL_GPIO_write(CONNECTION_LED_PORT, CONNECTION_LED_PIN, 0);
 
     if (!PHAL_FDCAN_init(FDCAN2, false, GCAN_BAUD_RATE)) {
         HardFault_Handler();

@@ -67,7 +67,7 @@ GPIOInitConfig_t gpio_config[] = {
 };
 
 static constexpr uint32_t TargetCoreClockrateHz = 16'000'000;
-ClockRateConfig_t clock_config = {
+PHAL_RCC_Config_t clock_config = {
     .clock_source           = CLOCK_SOURCE_HSE,
     .use_pll                = false,
     .system_clock_target_hz = TargetCoreClockrateHz,
@@ -75,12 +75,6 @@ ClockRateConfig_t clock_config = {
     .apb1_clock_target_hz   = (TargetCoreClockrateHz / (1)),
     .apb2_clock_target_hz   = (TargetCoreClockrateHz / (1)),
 };
-
-/* Locals for Clock Rates */
-extern uint32_t APB1ClockRateHz;
-extern uint32_t APB2ClockRateHz;
-extern uint32_t AHBClockRateHz;
-extern uint32_t PLLClockRateHz;
 
 extern void HardFault_Handler(void);
 
@@ -101,7 +95,7 @@ int main(void) {
         HardFault_Handler();
     }
     WDG_init();
-    if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (false == PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
 
@@ -116,7 +110,7 @@ int main(void) {
 
     vehicle_init(); // ! important for amks
 
-    PHAL_writeGPIO(ECU_SDC_CTRL_PORT, ECU_SDC_CTRL_PIN, true); // set SDC high
+    PHAL_GPIO_write(ECU_SDC_CTRL_PORT, ECU_SDC_CTRL_PIN, true); // set SDC high
 
     // Software Initialization
     osKernelInitialize();

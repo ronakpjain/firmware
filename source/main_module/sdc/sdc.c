@@ -49,16 +49,18 @@ void SDC_task_periodic(void) {
     
     if (mux_addr != SDC_UNREADABLE) {
         // Set mux control
-        PHAL_writeGPIO(SDC_MUX_S0_PORT, SDC_MUX_S0_PIN, (mux_addr >> 0) & 0x1);
-        PHAL_writeGPIO(SDC_MUX_S1_PORT, SDC_MUX_S1_PIN, (mux_addr >> 1) & 0x1);
-        PHAL_writeGPIO(SDC_MUX_S2_PORT, SDC_MUX_S2_PIN, (mux_addr >> 2) & 0x1);
-        PHAL_writeGPIO(SDC_MUX_S3_PORT, SDC_MUX_S3_PIN, (mux_addr >> 3) & 0x1);
+        PHAL_GPIO_write(SDC_MUX_S0_PORT, SDC_MUX_S0_PIN, (mux_addr >> 0) & 0x1);
+        PHAL_GPIO_write(SDC_MUX_S1_PORT, SDC_MUX_S1_PIN, (mux_addr >> 1) & 0x1);
+        PHAL_GPIO_write(SDC_MUX_S2_PORT, SDC_MUX_S2_PIN, (mux_addr >> 2) & 0x1);
+        PHAL_GPIO_write(SDC_MUX_S3_PORT, SDC_MUX_S3_PIN, (mux_addr >> 3) & 0x1);
         
         // delay to allow mux signals to stabilize
         osDelay(1);
 
         // ! reading the input pin as 1 = closed, 0 = open
-        bool is_node_open = !PHAL_readGPIO(SDC_MUX_PORT, SDC_MUX_PIN);
+        bool is_node_closed = false;
+        (void)PHAL_GPIO_read(SDC_MUX_PORT, SDC_MUX_PIN, &is_node_closed);
+        bool is_node_open = !is_node_closed;
 
         // Read the signal and update the relevant fault state
         update_fault(current_node->fault_id, is_node_open);
