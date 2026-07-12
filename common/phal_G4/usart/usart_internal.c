@@ -88,20 +88,20 @@ static bool wait_for_disabled(USART_TypeDef *instance) {
     return false;
 }
 
-bool PHAL_USART_internalConfigure(
-    PHAL_USART_Handle_t *handle,
-    const PHAL_USART_Config_t *config
-) {
-    if (handle == NULL || config == NULL || !supported_instance(config->instance)
-        || config->baud_rate == 0U || config->word_length < 7U
-        || config->word_length > 9U || config->parity > PHAL_USART_PARITY_ODD
-        || config->stop_bits > PHAL_USART_STOP_BITS_2) {
-        return false;
-    }
+bool PHAL_USART_internalValidateConfig(const PHAL_USART_Config_t *config) {
+    return config != NULL && supported_instance(config->instance)
+        && config->baud_rate != 0U && config->word_length >= 7U
+        && config->word_length <= 9U && config->parity <= PHAL_USART_PARITY_ODD
+        && config->stop_bits <= PHAL_USART_STOP_BITS_2;
+}
 
+bool PHAL_USART_internalPrepareInstance(
+    const PHAL_USART_Config_t *config,
+    uint32_t *baud_register
+) {
     const uint32_t clock_hz = clock_for_instance(config->instance);
     const uint32_t brr = (clock_hz + (config->baud_rate / 2U)) / config->baud_rate;
-    if (clock_hz == 0U || brr == 0U || brr > 0xFFFFU) {
+    if (baud_register == NULL || clock_hz == 0U || brr == 0U || brr > 0xFFFFU) {
         return false;
     }
 
@@ -110,7 +110,14 @@ bool PHAL_USART_internalConfigure(
     if (!wait_for_disabled(config->instance)) {
         return false;
     }
+    *baud_register = brr;
+    return true;
+}
 
+bool PHAL_USART_internalInitializeStateAndDma(
+    PHAL_USART_Handle_t *handle,
+    const PHAL_USART_Config_t *config
+) {
     PHAL_USART_State_t *state = allocate_state(handle, config->instance);
     if (state == NULL) {
         return false;
@@ -131,7 +138,14 @@ bool PHAL_USART_internalConfigure(
         state->registered = false;
         return false;
     }
+    return true;
+}
 
+void PHAL_USART_internalConfigureRegisters(
+    PHAL_USART_Handle_t *handle,
+    const PHAL_USART_Config_t *config,
+    uint32_t baud_register
+) {
     uint32_t cr1 = 0U;
     if (config->parity != PHAL_USART_PARITY_NONE) {
         cr1 |= USART_CR1_PCE;
@@ -153,7 +167,7 @@ bool PHAL_USART_internalConfigure(
         cr3 |= USART_CR3_CTSE;
     }
 
-    config->instance->BRR = brr;
+    config->instance->BRR = baud_register;
     config->instance->CR1 = cr1;
     config->instance->CR2 = ((uint32_t)config->stop_bits << USART_CR2_STOP_Pos)
         & USART_CR2_STOP_Msk;
@@ -168,13 +182,16 @@ bool PHAL_USART_internalConfigure(
     handle->tx_success = false;
     handle->rx_success = false;
     handle->initialized = true;
+    PHAL_USART_State_t *state = state_for_handle(handle);
+    if (state == NULL) {
+        return;
+    }
     state->rx_buffer = NULL;
     state->rx_capacity = 0U;
     state->rx_length = 0U;
     state->rx_idle = false;
     state->tx_dma_complete = false;
     enable_usart_irq(config->instance);
-    return true;
 }
 
 static void usart_tx_dma_complete(void *context, bool success) {
@@ -216,17 +233,25 @@ static void usart_rx_dma_complete(void *context, bool success) {
     complete_receive(handle, success, success ? state->rx_length : 0U);
 }
 
-bool PHAL_USART_internalStartTransmit(
+bool PHAL_USART_internalValidateTransmit(
+    const PHAL_USART_Handle_t *handle,
+    const uint8_t *data,
+    size_t length
+) {
+    return handle != NULL && handle->initialized && handle->instance != NULL
+        && data != NULL && length != 0U && length <= UINT16_MAX && !handle->tx_busy
+        && state_for_handle((PHAL_USART_Handle_t *)handle) != NULL;
+}
+
+bool PHAL_USART_internalArmTransmit(
     PHAL_USART_Handle_t *handle,
     const uint8_t *data,
     size_t length
 ) {
     PHAL_USART_State_t *state = state_for_handle(handle);
-    if (state == NULL || !handle->initialized || data == NULL || length == 0U
-        || length > UINT16_MAX || handle->tx_busy) {
+    if (state == NULL) {
         return false;
     }
-
     state->tx_dma_complete = false;
     handle->tx_busy = true;
     handle->tx_success = false;
@@ -250,18 +275,26 @@ bool PHAL_USART_internalStartTransmit(
     return true;
 }
 
-bool PHAL_USART_internalStartReceive(
+bool PHAL_USART_internalValidateReceive(
+    const PHAL_USART_Handle_t *handle,
+    const uint8_t *data,
+    size_t length
+) {
+    return handle != NULL && handle->initialized && handle->instance != NULL
+        && data != NULL && length != 0U && length <= UINT16_MAX && !handle->rx_busy
+        && state_for_handle((PHAL_USART_Handle_t *)handle) != NULL;
+}
+
+bool PHAL_USART_internalArmReceive(
     PHAL_USART_Handle_t *handle,
     uint8_t *data,
     size_t length,
     bool idle
 ) {
     PHAL_USART_State_t *state = state_for_handle(handle);
-    if (state == NULL || !handle->initialized || data == NULL || length == 0U
-        || length > UINT16_MAX || handle->rx_busy) {
+    if (state == NULL) {
         return false;
     }
-
     state->rx_buffer = data;
     state->rx_capacity = length;
     state->rx_length = length;
@@ -294,17 +327,23 @@ bool PHAL_USART_internalStartReceive(
     return true;
 }
 
-bool PHAL_USART_internalStopReceive(PHAL_USART_Handle_t *handle) {
-    PHAL_USART_State_t *state = state_for_handle(handle);
-    if (state == NULL || !handle->initialized) {
-        return false;
-    }
+bool PHAL_USART_internalValidateHandle(const PHAL_USART_Handle_t *handle) {
+    return handle != NULL && handle->initialized && handle->instance != NULL
+        && state_for_handle((PHAL_USART_Handle_t *)handle) != NULL;
+}
+
+void PHAL_USART_internalDisableReceiveRequests(PHAL_USART_Handle_t *handle) {
     handle->instance->CR3 &= ~(USART_CR3_DMAR | USART_CR3_EIE);
     handle->instance->CR1 &= ~(USART_CR1_IDLEIE | USART_CR1_PEIE);
-    const bool stopped = PHAL_DMA_abort(&handle->rx_dma);
+}
+
+void PHAL_USART_internalCompleteStopReceive(PHAL_USART_Handle_t *handle) {
+    PHAL_USART_State_t *state = state_for_handle(handle);
+    if (handle == NULL || state == NULL) {
+        return;
+    }
     handle->rx_busy = false;
     state->rx_idle = false;
-    return stopped;
 }
 
 bool PHAL_USART_internalCompleteTransmit(PHAL_USART_Handle_t *handle, bool success) {
