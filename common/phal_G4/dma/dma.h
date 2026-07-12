@@ -1,111 +1,43 @@
+#ifndef PHAL_G4_DMA_H
+#define PHAL_G4_DMA_H
+
+#include <stdbool.h>
+#include <stdint.h>
+
 /**
- * @file dma.h
- * @author Chris McGalliard - Port of L4 HAL by Dawson Moore (moore800@purdue.edu)
- * @brief
- * @version 0.1
- * @date 2023-08-19
+ * @brief Opaque, storage-backed DMA transfer handle.
  *
- * @copyright Copyright (c) 2023
- *
+ * The handle contains all state required by PHAL and must remain allocated for
+ * the lifetime of any peripheral handle that embeds it. Register addresses,
+ * channel numbers, and request IDs are intentionally private to PHAL.
  */
+typedef struct PHAL_DMA_Handle {
+    uintptr_t _storage[8];
+} PHAL_DMA_Handle_t;
 
-#ifndef __PHAL_G4_DMA_H__
-#define __PHAL_G4_DMA_H__
-
-#include "common/phal_G4/phal_G4.h"
-
-typedef enum {
-    DMA_SIZE_8BIT  = 0,
-    DMA_SIZE_16BIT = 1,
-    DMA_SIZE_32BIT = 2
-} dma_size_t;
-
-// Mux requests (TODO support all)
-#define DMA_REQUEST_ADC1 5U
-#define DMA_REQUEST_ADC2 36U
-#define DMA_REQUEST_ADC3 37U
-#define DMA_REQUEST_ADC4 38U
-
-#define DMA_REQUEST_SPI1_RX 10U
-#define DMA_REQUEST_SPI1_TX 11U
-#define DMA_REQUEST_SPI2_RX 12U
-#define DMA_REQUEST_SPI2_TX 13U
-#define DMA_REQUEST_SPI3_RX 14U
-#define DMA_REQUEST_SPI3_TX 15U
-
-#define DMA_REQUEST_USART1_RX 24U
-#define DMA_REQUEST_USART1_TX 25U
-#define DMA_REQUEST_USART2_RX 26U
-#define DMA_REQUEST_USART2_TX 27U
-#define DMA_REQUEST_USART3_RX 28U
-#define DMA_REQUEST_USART3_TX 29U
-
-typedef struct {
-    uint32_t periph_addr;
-    uint32_t mem_addr;
-    uint16_t tx_size;
-    uint8_t mem_size;
-
-    bool increment;
-    bool circular;
-    uint8_t dir;
-    bool mem_inc;
-    bool periph_inc;
-    bool mem_to_mem;
-    uint8_t priority;
-    uint8_t periph_size;
-    bool tx_isr_en;
-    uint8_t dma_chan_request;
-    uint8_t channel_idx;
-    uint8_t mux_request;
-
-    DMA_TypeDef* periph;
-    DMA_Channel_TypeDef* channel; // Example DMA1_Stream0 or DMA2_Stream7
-} dma_init_t;
-
-/*
- * @brief Initialize DMA peripheral to set m2m, p2p, or p2m with set size
- *        and length of txfer
+/**
+ * @brief Return whether a DMA transfer is active.
  *
- * @param dma -> Address of initialization structure
- * @return true -> Successful init (no clashing params)
- * @return false -> Init not complete (parameters clash)
- */
-bool PHAL_initDMA(dma_init_t* dma);
-
-/*
- * @brief Start txfer after sucessful DMA peripheral initialization
+ * @param handle Initialized DMA handle.
+ * @return true A one-shot transfer is active, or a circular transfer remains armed.
+ * @return false The handle is invalid or no transfer is active.
  *
- * @param dma -> Address of initialization structure
+ * @note This function does not block. The result may change immediately from an
+ * interrupt context.
  */
-void PHAL_startTxfer(dma_init_t* dma);
+bool PHAL_DMA_busy(const PHAL_DMA_Handle_t *handle);
 
-/*
- * @brief Stop txfer
+/**
+ * @brief Stop an active DMA transfer and clear its pending flags.
  *
- * @param dma -> Address of initialization structure
- */
-void PHAL_stopTxfer(dma_init_t* dma);
-
-/*
- * @brief Re-enable DMA txfer after error ISR fires
+ * @param handle Initialized DMA handle.
+ * @return true The channel was stopped or was already idle.
+ * @return false The handle is invalid or the channel did not disable before the timeout.
  *
- * @param dma -> Address of initialization structure
+ * @note This function blocks for a bounded hardware-disable wait. It does not
+ * invoke the completion callback. The DMA route and channel remain owned by
+ * the handle and may be started again.
  */
-void PHAL_reEnable(dma_init_t* dma);
+bool PHAL_DMA_abort(PHAL_DMA_Handle_t *handle);
 
-/*
- * @brief Set memory address for DMA transfer. In Mem to Mem this acts as the source address
- *
- * @param dma -> Address of initialization structure
- */
-void PHAL_DMA_setMemAddress(dma_init_t* dma, const uint32_t address);
-
-/*
- * @brief Set transfer length for DMA transaction
- *
- * @param dma -> Address of initialization structure
- */
-void PHAL_DMA_setTxferLength(dma_init_t* dma, const uint32_t length);
-
-#endif // __PHAL_G4_DMA_H__
+#endif
