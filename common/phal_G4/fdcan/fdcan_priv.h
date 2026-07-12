@@ -34,6 +34,8 @@
                                                                                             Address */
 #define SRAMCAN_TFQSA ((uint32_t)(SRAMCAN_TEFSA + (SRAMCAN_TEF_NBR * SRAMCAN_TEF_SIZE))) /* Tx FIFO/Queue Start
                                                                                             Address                  */
-#define SRAMCAN_SIZE  ((uint32_t)(SRAMCAN_TFQSA + (SRAMCAN_TFQ_NBR * SRAMCAN_TFQ_SIZE))) /* Message RAM size         */
+#define SRAMCAN_SIZE  ((uint32_t)(SRAMCAN_TFQSA + (SRAMCAN_TFQ_NBR * SRAMCAN_TFQ_SIZE))) /* Fixed controller partition */
+#define SRAMCAN_CONTROLLER_COUNT (3U)
+#define SRAMCAN_TOTAL_SIZE ((uint32_t)(SRAMCAN_SIZE * SRAMCAN_CONTROLLER_COUNT))
 
 #endif // __PHAL_G4_FDCAN_PRIV_H__
