@@ -25,18 +25,40 @@ bool PHAL_CAN_internalExitInit(FDCAN_GlobalTypeDef *instance);
 bool PHAL_CAN_internalMakeNBTP(uint32_t kernel_hz, uint32_t bit_rate, uint32_t *nbtp);
 uintptr_t PHAL_CAN_internalRamBase(FDCAN_GlobalTypeDef *instance);
 
-bool PHAL_CAN_internalConfigure(
+bool PHAL_CAN_internalValidateInit(
     PHAL_CAN_Handle_t *handle,
     const PHAL_CAN_Config_t *config
 );
-bool PHAL_CAN_internalSetFilters(
+bool PHAL_CAN_internalBuildTiming(uint32_t bit_rate, uint32_t *nbtp);
+void PHAL_CAN_internalEnableClock(void);
+bool PHAL_CAN_internalConfigureController(
+    PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_Config_t *config,
+    uint32_t nbtp
+);
+
+bool PHAL_CAN_internalValidateFilters(
+    const PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_FilterConfig_t *filters
+);
+void PHAL_CAN_internalProgramFilters(
     PHAL_CAN_Handle_t *handle,
     const PHAL_CAN_FilterConfig_t *filters
 );
-bool PHAL_CAN_internalSend(
+void PHAL_CAN_internalStoreFilterCounts(
+    PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_FilterConfig_t *filters
+);
+
+bool PHAL_CAN_internalValidateHandle(const PHAL_CAN_Handle_t *handle);
+bool PHAL_CAN_internalTxAvailable(const PHAL_CAN_Handle_t *handle);
+bool PHAL_CAN_internalValidateMessage(
+    const PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_Message_t *message
+);
+bool PHAL_CAN_internalWriteTx(
     PHAL_CAN_Handle_t *handle,
     const PHAL_CAN_Message_t *message
 );
-bool PHAL_CAN_internalTxAvailable(const PHAL_CAN_Handle_t *handle);
 
 #endif

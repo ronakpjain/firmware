@@ -197,24 +197,33 @@ static bool valid_filters(const PHAL_CAN_FilterConfig_t *filters) {
     return true;
 }
 
-bool PHAL_CAN_internalConfigure(PHAL_CAN_Handle_t *handle, const PHAL_CAN_Config_t *config) {
-    PHAL_CAN_State_t *state = PHAL_CAN_internalState(handle);
-    FDCAN_GlobalTypeDef *instance = PHAL_CAN_internalExpectedInstance(handle);
-    if (state == NULL || config == NULL || !supported_instance(instance)
-        || config->bit_rate == 0U) {
-        return false;
-    }
+bool PHAL_CAN_internalValidateInit(
+    PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_Config_t *config
+) {
+    return PHAL_CAN_internalState(handle) != NULL && config != NULL
+        && supported_instance(PHAL_CAN_internalExpectedInstance(handle))
+        && config->bit_rate != 0U;
+}
 
+bool PHAL_CAN_internalBuildTiming(uint32_t bit_rate, uint32_t *nbtp) {
     const uint32_t kernel_hz = PHAL_RCC_fdcanClockHz();
-    uint32_t nbtp;
-    if (kernel_hz == 0U
-        || !PHAL_CAN_internalMakeNBTP(kernel_hz, config->bit_rate, &nbtp)) {
-        return false;
-    }
+    return kernel_hz != 0U && PHAL_CAN_internalMakeNBTP(kernel_hz, bit_rate, nbtp);
+}
 
+void PHAL_CAN_internalEnableClock(void) {
     RCC->APB1ENR1 |= RCC_APB1ENR1_FDCANEN;
     (void)RCC->APB1ENR1;
-    if (!PHAL_CAN_internalEnterInit(instance)) {
+}
+
+bool PHAL_CAN_internalConfigureController(
+    PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_Config_t *config,
+    uint32_t nbtp
+) {
+    PHAL_CAN_State_t *state = PHAL_CAN_internalState(handle);
+    FDCAN_GlobalTypeDef *instance = PHAL_CAN_internalExpectedInstance(handle);
+    if (state == NULL || instance == NULL || !PHAL_CAN_internalEnterInit(instance)) {
         return false;
     }
 
@@ -252,21 +261,18 @@ bool PHAL_CAN_internalConfigure(PHAL_CAN_Handle_t *handle, const PHAL_CAN_Config
     return true;
 }
 
-bool PHAL_CAN_internalSetFilters(
+bool PHAL_CAN_internalValidateFilters(
+    const PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_FilterConfig_t *filters
+) {
+    return PHAL_CAN_internalValidateHandle(handle) && valid_filters(filters);
+}
+
+void PHAL_CAN_internalProgramFilters(
     PHAL_CAN_Handle_t *handle,
     const PHAL_CAN_FilterConfig_t *filters
 ) {
-    PHAL_CAN_State_t *state = PHAL_CAN_internalState(handle);
-    if (state == NULL || handle == NULL || !handle->initialized
-        || !valid_filters(filters)) {
-        return false;
-    }
-
     FDCAN_GlobalTypeDef *instance = handle->instance;
-    if (!PHAL_CAN_internalEnterInit(instance)) {
-        return false;
-    }
-
     const uintptr_t base = PHAL_CAN_internalRamBase(instance);
     volatile uint32_t *standard = (volatile uint32_t *)(base + SRAMCAN_FLSSA);
     volatile uint32_t *extended = (volatile uint32_t *)(base + SRAMCAN_FLESA);
@@ -296,29 +302,38 @@ bool PHAL_CAN_internalSetFilters(
         | (((uint32_t)filters->extended_id_count << FDCAN_RXGFC_LSE_Pos)
            & FDCAN_RXGFC_LSE_Msk);
     instance->XIDAM = FDCAN_XIDAM_EIDM_Msk;
+}
 
-    if (!PHAL_CAN_internalExitInit(instance)) {
-        return false;
+void PHAL_CAN_internalStoreFilterCounts(
+    PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_FilterConfig_t *filters
+) {
+    PHAL_CAN_State_t *state = PHAL_CAN_internalState(handle);
+    if (state == NULL) {
+        return;
     }
-    state->standard_filter_count = filters->standard_id_count;
-    state->extended_filter_count = filters->extended_id_count;
-    return true;
+    state->standard_filter_count = filters->standard_id_count;    state->extended_filter_count = filters->extended_id_count;
+}
+
+bool PHAL_CAN_internalValidateHandle(const PHAL_CAN_Handle_t *handle) {
+    return handle != NULL && handle->initialized && handle->instance != NULL;
 }
 
 bool PHAL_CAN_internalTxAvailable(const PHAL_CAN_Handle_t *handle) {
-    return handle != NULL && handle->initialized && handle->instance != NULL
-        && (handle->instance->TXFQS & FDCAN_TXFQS_TFQF) == 0U;
+    return (handle->instance->TXFQS & FDCAN_TXFQS_TFQF) == 0U;
 }
 
-bool PHAL_CAN_internalSend(PHAL_CAN_Handle_t *handle, const PHAL_CAN_Message_t *message) {
-    if (handle == NULL || !handle->initialized || handle->instance == NULL
-        || message == NULL || message->length > 8U
-        || (!message->extended && message->id > 0x7FFU)
-        || (message->extended && message->id > 0x1FFFFFFFU)
-        || !PHAL_CAN_internalTxAvailable(handle)) {
-        return false;
-    }
+bool PHAL_CAN_internalValidateMessage(
+    const PHAL_CAN_Handle_t *handle,
+    const PHAL_CAN_Message_t *message
+) {
+    return PHAL_CAN_internalValidateHandle(handle) && message != NULL && message->length <= 8U
+        && (message->extended || message->id <= 0x7FFU)
+        && (!message->extended || message->id <= 0x1FFFFFFFU)
+        && PHAL_CAN_internalTxAvailable(handle);
+}
 
+bool PHAL_CAN_internalWriteTx(PHAL_CAN_Handle_t *handle, const PHAL_CAN_Message_t *message) {
     const uint32_t status = handle->instance->TXFQS;
     const uint32_t put = (status & FDCAN_TXFQS_TFQPI_Msk) >> FDCAN_TXFQS_TFQPI_Pos;
     if (put >= SRAMCAN_TFQ_NBR) {
