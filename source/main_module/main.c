@@ -97,7 +97,7 @@ DEFINE_HEARTBEAT_TASK(nullptr);
 
 int main(void) {
     // Hardware Initialization
-    if (0 != PHAL_configureClockRates(&clock_config)) {
+    if (!PHAL_RCC_configure(&clock_config)) {
         HardFault_Handler();
     }
     WDG_init();

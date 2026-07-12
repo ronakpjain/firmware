@@ -17,7 +17,7 @@ GPIOInitConfig_t gpio_config[] = {
 };
 
 static constexpr uint32_t TargetCoreClockrateHz = 16'000'000;
-ClockRateConfig_t clock_config = {
+PHAL_RCC_Config_t clock_config = {
     .clock_source              = CLOCK_SOURCE_HSI,
     .use_pll                   = false,
     .vco_output_rate_target_hz = 16'000'000,
@@ -27,10 +27,6 @@ ClockRateConfig_t clock_config = {
     .apb2_clock_target_hz      = (TargetCoreClockrateHz / (1)),
 };
 
-extern uint32_t APB1ClockRateHz;
-extern uint32_t APB2ClockRateHz;
-extern uint32_t AHBClockRateHz;
-extern uint32_t PLLClockRateHz;
 
 void HardFault_Handler();
 
@@ -45,7 +41,7 @@ DEFINE_TASK(ledblink3, 500, osPriorityNormal, 64);
 DEFINE_TASK(ledblink4, 1000, osPriorityNormal, 64);
 
 int main() {
-    if (PHAL_configureClockRates(&clock_config)) {
+    if (!PHAL_RCC_configure(&clock_config)) {
         HardFault_Handler();
     }
 
