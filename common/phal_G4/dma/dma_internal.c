@@ -109,7 +109,7 @@ static uint32_t channel_transfer_error_flag(uint8_t channel) {
         : 0U;
 }
 
-static bool disable_channel(PHAL_DMA_State_t *state) {
+bool PHAL_DMA_internalDisable(PHAL_DMA_State_t *state) {
     state->registers->CCR &= ~DMA_CCR_EN;
     for (uint32_t timeout = PHAL_DMA_TIMEOUT; timeout != 0U; --timeout) {
         if ((state->registers->CCR & DMA_CCR_EN) == 0U) {
@@ -206,7 +206,7 @@ bool PHAL_DMA_internalInit(
 
     owners[route->channel - 1U] = handle;
 
-    if (!disable_channel(state)) {
+    if (!PHAL_DMA_internalDisable(state)) {
         remove_owner(handle);
         memset(state, 0, sizeof(*state));
         return false;
@@ -235,7 +235,7 @@ bool PHAL_DMA_internalStart(
         return false;
     }
 
-    if (!disable_channel(state)) {
+    if (!PHAL_DMA_internalDisable(state)) {
         return false;
     }
 
@@ -270,18 +270,12 @@ bool PHAL_DMA_internalStart(
     return true;
 }
 
-bool PHAL_DMA_internalAbort(PHAL_DMA_State_t *state) {
-    if (state == NULL || !state->initialized) {
-        return false;
-    }
-
-    bool disabled = disable_channel(state);
+void PHAL_DMA_internalClearTransfer(PHAL_DMA_State_t *state) {
     state->route->controller->IFCR = channel_flags(state->route->channel);
     state->busy = false;
     state->circular = false;
     state->callback = NULL;
     state->callback_context = NULL;
-    return disabled;
 }
 
 void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel) {
@@ -313,7 +307,7 @@ void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel) {
     const bool keep_circular = state->circular && !error;
     bool disabled = true;
     if (!keep_circular) {
-        disabled = disable_channel(state);
+        disabled = PHAL_DMA_internalDisable(state);
     }
     controller->IFCR = flags;
 
