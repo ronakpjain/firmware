@@ -63,24 +63,34 @@ PHAL_RCC_Config_t clock_config = {
 
 // USART Configuration for GPS
 static constexpr uint32_t GPS_BAUD_RATE = 460'800;
-dma_init_t rover_tx_dma_config = USART3_TXDMA_CONT_CONFIG(NULL, 2);
-dma_init_t rover_rx_dma_config = USART3_RXDMA_CONT_CONFIG(NULL, 1);
-usart_init_t usart3 = {
-    .baud_rate        = GPS_BAUD_RATE,
-    .word_length      = WORD_8,
-    .stop_bits        = SB_ONE,
-    .parity           = PT_NONE,
-    .hw_flow_ctl      = HW_DISABLE,
-    .ovsample         = OV_16,
-    .obsample         = OB_DISABLE,
-    .periph           = USART3,
-    .wake_addr        = false,
-    .usart_active_num = USART3_ACTIVE_IDX,
-    .tx_dma_cfg       = &rover_tx_dma_config,
-    .rx_dma_cfg       = &rover_rx_dma_config,
+PHAL_USART_Handle_t usart3;
+static const PHAL_USART_Config_t usart3_config = {
+    .instance     = USART3,
+    .baud_rate    = GPS_BAUD_RATE,
+    .word_length  = 8,
+    .parity       = PHAL_USART_PARITY_NONE,
+    .stop_bits    = PHAL_USART_STOP_BITS_1,
+    .hardware_rts = false,
+    .hardware_cts = false,
 };
 
 extern void HardFault_Handler(void);
+
+void PHAL_USART_receiveCompleteCallback(
+    PHAL_USART_Handle_t *handle,
+    bool success,
+    size_t received_length
+) {
+    (void)success;
+    (void)received_length;
+    if (handle == &usart3
+        && !PHAL_USART_startIdleReceive(
+            handle,
+            (uint8_t *)rover_rx_buffer,
+            sizeof(rover_rx_buffer))) {
+        HardFault_Handler();
+    }
+}
 
 // Thread Defines
 DEFINE_CAN_TASKS();
@@ -100,10 +110,11 @@ int main(void) {
     if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
-    if (false == PHAL_initUSART(&usart3, APB1ClockRateHz)) {
+    if (!PHAL_USART_init(&usart3, &usart3_config)) {
         HardFault_Handler();
     }
-    if (false == PHAL_usartRxDma(&usart3, (uint8_t *)rover_rx_buffer, sizeof(rover_rx_buffer), 1)) {
+    if (!PHAL_USART_startIdleReceive(&usart3, (uint8_t *)rover_rx_buffer,
+                                     sizeof(rover_rx_buffer))) {
         HardFault_Handler();
     }
     if (false == PHAL_FDCAN_init(FDCAN2, false, VCAN_BAUD_RATE)) {
