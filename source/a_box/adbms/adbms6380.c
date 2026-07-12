@@ -162,13 +162,13 @@ adbms6380_read_result_t adbms6380_read(PHAL_SPI_Handle_t *spi,
     // Send command and get response
     adbms6380_set_cs_low(spi);
     // First send command. Command is passed to all modules in the daisy chain.
-    if (!PHAL_SPI_transferBlocking(spi, cmd_buffer, NULL, ADBMS6380_COMMAND_PKT_SIZE, 1000000U)) {
+    if (!PHAL_SPI_transfer_noDMA(spi, cmd_buffer, NULL, ADBMS6380_COMMAND_PKT_SIZE, 1000000U)) {
         adbms6380_set_cs_high(spi);
         return ADBMS6380_READ_SPI_FAILURE;
     }
     // Then read data back. Data is in order of module 0 ... module N-1
     size_t total_rx_length = module_count * rx_length_per_module;
-    if (!PHAL_SPI_transferBlocking(spi, NULL, rx_buffer, total_rx_length, 1000000U)) {
+    if (!PHAL_SPI_transfer_noDMA(spi, NULL, rx_buffer, total_rx_length, 1000000U)) {
         adbms6380_set_cs_high(spi);
         return ADBMS6380_READ_SPI_FAILURE;
     }

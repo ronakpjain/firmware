@@ -34,20 +34,15 @@ uint8_t tx_buffer[TX_BUFFER_SIZE];
 
 PHAL_USART_Handle_t usart_handle;
 static const PHAL_USART_Config_t usart_config = {
-    .instance     = USART2,
-    .baud_rate    = 115200U,
-    .word_length  = 8,
-    .parity       = PHAL_USART_PARITY_NONE,
-    .stop_bits    = PHAL_USART_STOP_BITS_1,
-    .hardware_rts = false,
-    .hardware_cts = false,
+    .instance  = USART2,
+    .baud_rate = 115200U,
 };
 
 int main() {
     osKernelInitialize();
     if (!PHAL_RCC_configure(&clock_config))
         HardFault_Handler();
-    if (!PHAL_initGPIO(gpio_config, countof(gpio_config)))
+    if (!PHAL_GPIO_init(gpio_config, countof(gpio_config)))
         HardFault_Handler();
     if (!PHAL_USART_init(&usart_handle, &usart_config))
         HardFault_Handler();

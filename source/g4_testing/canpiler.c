@@ -51,7 +51,7 @@ int main() {
         HardFault_Handler();
     }
 
-    if (!PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (!PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
 

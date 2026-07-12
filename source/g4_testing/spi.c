@@ -40,21 +40,17 @@ static PHAL_SPI_Handle_t spi1;
 static PHAL_SPI_Handle_t spi2;
 static const PHAL_SPI_Config_t spi1_config = {
     .instance = SPI1, .mode = PHAL_SPI_MODE_MASTER, .data_rate_hz = 1000000U,
-    .frame_size_bits = 8, .clock_polarity_high = false,
-    .clock_phase_second_edge = false, .software_chip_select = true,
-    .chip_select_port = GPIOA, .chip_select_pin = 4,
+    .software_chip_select = true, .chip_select_port = GPIOA, .chip_select_pin = 4,
 };
 static const PHAL_SPI_Config_t spi2_config = {
     .instance = SPI2, .mode = PHAL_SPI_MODE_SLAVE, .data_rate_hz = 1000000U,
-    .frame_size_bits = 8, .clock_polarity_high = false,
-    .clock_phase_second_edge = false, .software_chip_select = false,
-    .chip_select_port = GPIOB, .chip_select_pin = 12,
+    .software_chip_select = false, .chip_select_port = GPIOB, .chip_select_pin = 12,
 };
 
 int main() {
     if (!PHAL_RCC_configure(&clock_config))
         HardFault_Handler();
-    if (!PHAL_initGPIO(gpio_config, countof(gpio_config)))
+    if (!PHAL_GPIO_init(gpio_config, countof(gpio_config)))
         HardFault_Handler();
     if (!PHAL_SPI_init(&spi1, &spi1_config) || !PHAL_SPI_init(&spi2, &spi2_config))
         HardFault_Handler();
@@ -65,7 +61,7 @@ int main() {
     while (PHAL_SPI_busy(&spi1) || PHAL_SPI_busy(&spi2)) {
     }
 
-    if (!PHAL_SPI_transferBlocking(&spi1, master_tx, master_rx, XFER_LEN, 1000000U))
+    if (!PHAL_SPI_transfer_noDMA(&spi1, master_tx, master_rx, XFER_LEN, 1000000U))
         HardFault_Handler();
     return 0;
 }

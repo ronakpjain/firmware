@@ -95,7 +95,7 @@ int main(void) {
         HardFault_Handler();
     }
     WDG_init();
-    if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (false == PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
 

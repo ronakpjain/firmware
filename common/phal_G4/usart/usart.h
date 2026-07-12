@@ -8,36 +8,28 @@
 #include "common/phal_G4/dma/dma.h"
 #include "common/phal_G4/phal_G4.h"
 
-typedef enum {
-    PHAL_USART_PARITY_NONE,
-    PHAL_USART_PARITY_EVEN,
-    PHAL_USART_PARITY_ODD
-} PHAL_USART_Parity_t;
-
-typedef enum {
-    PHAL_USART_STOP_BITS_1,
-    PHAL_USART_STOP_BITS_2
-} PHAL_USART_StopBits_t;
-
+/**
+ * @brief Minimal configuration used to initialize an 8-N-1 USART handle.
+ *
+ * PHAL deliberately fixes word length to eight bits, disables parity and
+ * hardware flow control, selects one stop bit, and uses oversampling by 16.
+ * These are the only settings used by the current G4 applications.
+ */
 typedef struct {
-    USART_TypeDef *instance;
-    uint32_t baud_rate;
-    uint8_t word_length;
-    PHAL_USART_Parity_t parity;
-    PHAL_USART_StopBits_t stop_bits;
-    bool hardware_rts;
-    bool hardware_cts;
+    USART_TypeDef *instance; /**< USART1, USART2, or USART3 register block. */
+    uint32_t baud_rate;      /**< Requested symbols per second. */
 } PHAL_USART_Config_t;
 
+/** Runtime state for one initialized USART and its DMA routes. */
 typedef struct {
-    USART_TypeDef *instance;
-    PHAL_DMA_Handle_t tx_dma;
-    PHAL_DMA_Handle_t rx_dma;
-    volatile bool tx_busy;
-    volatile bool rx_busy;
-    volatile bool tx_success;
-    volatile bool rx_success;
-    bool initialized;
+    USART_TypeDef *instance; /**< Configured USART register block. */
+    PHAL_DMA_Handle_t tx_dma; /**< Privately managed transmit DMA handle. */
+    PHAL_DMA_Handle_t rx_dma; /**< Privately managed receive DMA handle. */
+    volatile bool tx_busy;    /**< Whether transmission or wire completion is pending. */
+    volatile bool rx_busy;    /**< Whether a receive operation is active. */
+    volatile bool tx_success; /**< Result of the most recently completed transmission. */
+    volatile bool rx_success; /**< Result of the most recently completed reception. */
+    bool initialized;         /**< Whether initialization completed successfully. */
 } PHAL_USART_Handle_t;
 
 /**
@@ -47,10 +39,11 @@ typedef struct {
  * PHAL_RCC_apb2ClockHz(), and BRR is calculated with the STM32 oversampling-by
  * 16 formula. Fixed DMA channels, requests, and IRQs are selected privately
  * from the USART instance. Hardware RTS/CTS are configured from the semantic
- * flags; receive and idle interrupts remain disabled until an operation starts.
+ * fixed 8-data-bit, no-parity, one-stop-bit format is programmed; receive and
+ * idle interrupts remain disabled until an operation starts.
  *
  * @param handle Storage-backed USART handle that remains valid after initialization.
- * @param config USART settings; word_length must be 7, 8, or 9.
+ * @param config USART instance and baud rate.
  * @return true The peripheral and both fixed DMA routes were initialized.
  * @return false Invalid configuration, unsupported instance, baud, or DMA collision.
  * @note This function blocks for register setup but does not transmit/receive.
@@ -70,7 +63,7 @@ bool PHAL_USART_init(PHAL_USART_Handle_t *handle, const PHAL_USART_Config_t *con
 bool PHAL_USART_transmit(PHAL_USART_Handle_t *handle, const uint8_t *data, size_t length);
 
 /**
- * @brief Transmit through DMA and wait for wire completion.
+ * @brief Transmit synchronously by waiting for DMA and wire completion.
  * @param handle Initialized USART handle.
  * @param data Source buffer retained while this function runs.
  * @param length Number of bytes.
@@ -79,7 +72,7 @@ bool PHAL_USART_transmit(PHAL_USART_Handle_t *handle, const uint8_t *data, size_
  * @return false Invalid state, timeout, or DMA/USART failure.
  * @note This function blocks and aborts on timeout.
  */
-bool PHAL_USART_transmitBlocking(
+bool PHAL_USART_transmit_noDMA(
     PHAL_USART_Handle_t *handle,
     const uint8_t *data,
     size_t length,
@@ -98,7 +91,7 @@ bool PHAL_USART_transmitBlocking(
 bool PHAL_USART_receive(PHAL_USART_Handle_t *handle, uint8_t *data, size_t length);
 
 /**
- * @brief Receive a fixed-length DMA buffer and wait for completion.
+ * @brief Receive synchronously by waiting for fixed-length DMA completion.
  * @param handle Initialized USART handle.
  * @param data Destination retained while this function runs.
  * @param length Exact number of bytes.
@@ -107,7 +100,7 @@ bool PHAL_USART_receive(PHAL_USART_Handle_t *handle, uint8_t *data, size_t lengt
  * @return false Invalid state, timeout, or DMA/USART failure.
  * @note This function blocks.
  */
-bool PHAL_USART_receiveBlocking(
+bool PHAL_USART_receive_noDMA(
     PHAL_USART_Handle_t *handle,
     uint8_t *data,
     size_t length,

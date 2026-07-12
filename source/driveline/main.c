@@ -65,37 +65,29 @@ volatile raw_adc3_values_t raw_adc3_values;
 volatile raw_adc4_values_t raw_adc4_values;
 
 const PHAL_ADC_ChannelConfig_t adc1_channel_config[] = {
-    {.channel = OIL_TEMP_L_ADC_CH, .rank = 1, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = OIL_TEMP_L_ADC_CH},
 };
 const PHAL_ADC_ChannelConfig_t adc2_channel_config[] = {
-    {.channel = OIL_TEMP_R_ADC_CH, .rank = 1, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = OIL_TEMP_R_ADC_CH},
 };
 const PHAL_ADC_ChannelConfig_t adc3_channel_config[] = {
-    {.channel = SHOCKPOT_LEFT_ADC_CHNL, .rank = 1, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = SHOCKPOT_LEFT_ADC_CHNL},
 };
 const PHAL_ADC_ChannelConfig_t adc4_channel_config[] = {
-    {.channel = SHOCKPOT_RIGHT_ADC_CHNL, .rank = 1, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = SHOCKPOT_RIGHT_ADC_CHNL},
 };
 
 const PHAL_ADC_Config_t adc1_config = {
-    .instance = ADC1, .resolution = PHAL_ADC_RESOLUTION_12_BIT,
-    .alignment = PHAL_ADC_ALIGNMENT_RIGHT, .oversampling = PHAL_ADC_OVERSAMPLING_NONE,
-    .channels = adc1_channel_config, .channel_count = 1, .continuous = true,
+    .instance = ADC1, .channels = adc1_channel_config, .channel_count = 1,
 };
 const PHAL_ADC_Config_t adc2_config = {
-    .instance = ADC2, .resolution = PHAL_ADC_RESOLUTION_12_BIT,
-    .alignment = PHAL_ADC_ALIGNMENT_RIGHT, .oversampling = PHAL_ADC_OVERSAMPLING_NONE,
-    .channels = adc2_channel_config, .channel_count = 1, .continuous = true,
+    .instance = ADC2, .channels = adc2_channel_config, .channel_count = 1,
 };
 const PHAL_ADC_Config_t adc3_config = {
-    .instance = ADC3, .resolution = PHAL_ADC_RESOLUTION_12_BIT,
-    .alignment = PHAL_ADC_ALIGNMENT_RIGHT, .oversampling = PHAL_ADC_OVERSAMPLING_NONE,
-    .channels = adc3_channel_config, .channel_count = 1, .continuous = true,
+    .instance = ADC3, .channels = adc3_channel_config, .channel_count = 1,
 };
 const PHAL_ADC_Config_t adc4_config = {
-    .instance = ADC4, .resolution = PHAL_ADC_RESOLUTION_12_BIT,
-    .alignment = PHAL_ADC_ALIGNMENT_RIGHT, .oversampling = PHAL_ADC_OVERSAMPLING_NONE,
-    .channels = adc4_channel_config, .channel_count = 1, .continuous = true,
+    .instance = ADC4, .channels = adc4_channel_config, .channel_count = 1,
 };
 PHAL_ADC_Handle_t adc1_handle;
 PHAL_ADC_Handle_t adc2_handle;
@@ -118,7 +110,7 @@ int main(void) {
         HardFault_Handler();
     }
     WDG_init();
-    if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (false == PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
     if (!PHAL_ADC_init(&adc1_handle, &adc1_config)

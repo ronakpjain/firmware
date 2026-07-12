@@ -65,13 +65,8 @@ PHAL_RCC_Config_t clock_config = {
 static constexpr uint32_t GPS_BAUD_RATE = 460'800;
 PHAL_USART_Handle_t usart3;
 static const PHAL_USART_Config_t usart3_config = {
-    .instance     = USART3,
-    .baud_rate    = GPS_BAUD_RATE,
-    .word_length  = 8,
-    .parity       = PHAL_USART_PARITY_NONE,
-    .stop_bits    = PHAL_USART_STOP_BITS_1,
-    .hardware_rts = false,
-    .hardware_cts = false,
+    .instance  = USART3,
+    .baud_rate = GPS_BAUD_RATE,
 };
 
 extern void HardFault_Handler(void);
@@ -107,7 +102,7 @@ int main(void) {
         HardFault_Handler();
     }
     WDG_init();
-    if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (false == PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
     if (!PHAL_USART_init(&usart3, &usart3_config)) {

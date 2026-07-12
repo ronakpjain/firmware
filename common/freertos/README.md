@@ -5,7 +5,7 @@ usage as drop-in replacement for psched:
 ```c
 #include "common/freertos/freertos.h" // also add FREERTOS to cmake.txt LIBS =
 
-void heartbeat_LED() { PHAL_toggleGPIO(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN); }
+void heartbeat_LED() { PHAL_GPIO_toggle(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN); }
 DEFINE_TASK(heartbeat_LED, 500, osPriorityNormal, 256); // define up here so it is global
 DEFINE_QUEUE(tcp_tx_queue, timestamped_frame_t, TCP_TX_ITEM_COUNT);
 

@@ -325,6 +325,7 @@ void PHAL_DMA_internalHandleIRQ(DMA_TypeDef *controller, uint8_t channel) {
     if (callback != NULL) {
         callback(context, success);
     }
+    PHAL_DMA_transferCompleteCallback(handle, success);
 }
 
 size_t PHAL_DMA_internalRemaining(const PHAL_DMA_Handle_t *handle) {

@@ -29,10 +29,7 @@ PHAL_SPI_Handle_t bms_spi_handle;
 static const PHAL_SPI_Config_t bms_spi_config = {
     .instance              = SPI1,
     .mode                  = PHAL_SPI_MODE_MASTER,
-    .data_rate_hz          = 500'000,
-    .frame_size_bits      = 8,
-    .clock_polarity_high  = false,
-    .clock_phase_second_edge = false,
+    .data_rate_hz         = 500'000,
     .software_chip_select = false, // BMS drives CS manually for timing
     .chip_select_port     = SPI1_CS_PORT,
     .chip_select_pin      = SPI1_CS_PIN,
@@ -41,17 +38,13 @@ static const PHAL_SPI_Config_t bms_spi_config = {
 PHAL_ADC_Handle_t adc_handle;
 volatile adc1_dma_buffer_t adc1_dma_buffer;
 const PHAL_ADC_ChannelConfig_t adc_channel_config[] = {
-    {.channel = ISENSE_ADC_CHANNEL, .rank = 1, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
-    {.channel = VBATT_ADC_CHANNEL, .rank = 2, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES}
+    {.channel = ISENSE_ADC_CHANNEL},
+    {.channel = VBATT_ADC_CHANNEL}
 };
 const PHAL_ADC_Config_t adc_config = {
     .instance      = ADC1,
-    .resolution    = PHAL_ADC_RESOLUTION_12_BIT,
-    .alignment     = PHAL_ADC_ALIGNMENT_RIGHT,
-    .oversampling  = PHAL_ADC_OVERSAMPLING_NONE,
     .channels      = adc_channel_config,
     .channel_count = sizeof(adc_channel_config) / sizeof(adc_channel_config[0]),
-    .continuous    = true,
 };
 
 /* PER HAL Initilization Structures */
@@ -125,7 +118,7 @@ int main(void) {
         HardFault_Handler();
     }
     WDG_init();
-    if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (false == PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
 
