@@ -86,12 +86,12 @@ GPIOInitConfig_t gpio_config[] = {
 /* ADC Configuration */
 volatile raw_adc_values_t raw_adc_values;
 const PHAL_ADC_ChannelConfig_t adc_channel_config[] = {
-    {.channel = THROTTLE1_ADC_CHANNEL, .rank = 1, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
-    {.channel = THROTTLE2_ADC_CHANNEL, .rank = 2, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
-    {.channel = REGEN1_ADC_CHANNEL, .rank = 3, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
-    {.channel = REGEN2_ADC_CHANNEL, .rank = 4, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
-    {.channel = BRAKE1_PRESSURE_ADC_CHANNEL, .rank = 5, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
-    {.channel = BRAKE2_PRESSURE_ADC_CHANNEL, .rank = 6, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES}
+    {.channel = THROTTLE1_ADC_CHANNEL},
+    {.channel = THROTTLE2_ADC_CHANNEL},
+    {.channel = REGEN1_ADC_CHANNEL},
+    {.channel = REGEN2_ADC_CHANNEL},
+    {.channel = BRAKE1_PRESSURE_ADC_CHANNEL},
+    {.channel = BRAKE2_PRESSURE_ADC_CHANNEL}
 };
 static_assert(
     (sizeof(raw_adc_values_t) / sizeof(uint16_t)) ==
@@ -101,30 +101,15 @@ static_assert(
 PHAL_ADC_Handle_t adc_handle;
 const PHAL_ADC_Config_t adc_config = {
     .instance      = ADC1,
-    .resolution    = PHAL_ADC_RESOLUTION_12_BIT,
-    .alignment     = PHAL_ADC_ALIGNMENT_RIGHT,
-    .oversampling  = PHAL_ADC_OVERSAMPLING_NONE,
     .channels      = adc_channel_config,
     .channel_count = sizeof(adc_channel_config) / sizeof(adc_channel_config[0]),
-    .continuous    = true,
 };
 
 // USART Configuration for LCD
-dma_init_t usart_tx_dma_config = USART1_TXDMA_CONT_CONFIG(NULL, 1);
-dma_init_t usart_rx_dma_config = USART1_RXDMA_CONT_CONFIG(NULL, 2);
-usart_init_t lcd = {
-    .baud_rate        = LCD_BAUD_RATE,
-    .word_length      = WORD_8,
-    .stop_bits        = SB_ONE,
-    .parity           = PT_NONE,
-    .hw_flow_ctl      = HW_DISABLE,
-    .ovsample         = OV_16,
-    .obsample         = OB_DISABLE,
-    .periph           = USART1,
-    .wake_addr        = false,
-    .usart_active_num = USART1_ACTIVE_IDX,
-    .tx_dma_cfg       = &usart_tx_dma_config,
-    .rx_dma_cfg       = &usart_rx_dma_config,
+PHAL_USART_Handle_t lcd;
+static const PHAL_USART_Config_t lcd_config = {
+    .instance  = USART1,
+    .baud_rate = LCD_BAUD_RATE,
 };
 
 static constexpr uint32_t TargetCoreClockrateHz = 16'000'000;
@@ -160,10 +145,10 @@ int main(void) {
         HardFault_Handler();
     }
     WDG_init();
-    if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
+    if (false == PHAL_GPIO_init(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
-    if (false == PHAL_initUSART(&lcd, APB2ClockRateHz)) {
+    if (!PHAL_USART_init(&lcd, &lcd_config)) {
         HardFault_Handler();
     }
     if (!PHAL_ADC_init(&adc_handle, &adc_config)) {

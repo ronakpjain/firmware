@@ -90,9 +90,7 @@ static bool wait_for_disabled(USART_TypeDef *instance) {
 
 bool PHAL_USART_internalValidateConfig(const PHAL_USART_Config_t *config) {
     return config != NULL && supported_instance(config->instance)
-        && config->baud_rate != 0U && config->word_length >= 7U
-        && config->word_length <= 9U && config->parity <= PHAL_USART_PARITY_ODD
-        && config->stop_bits <= PHAL_USART_STOP_BITS_2;
+        && config->baud_rate != 0U;
 }
 
 bool PHAL_USART_internalPrepareInstance(
@@ -141,15 +139,25 @@ bool PHAL_USART_internalInitializeStateAndDma(
     return true;
 }
 
+bool PHAL_USART_internalValidateHardwareConfig(
+    const PHAL_USART_InternalConfig_t *config
+) {
+    return config != NULL && supported_instance(config->instance)
+        && config->baud_rate != 0U && config->word_length >= 7U
+        && config->word_length <= 9U
+        && config->parity <= PHAL_USART_INTERNAL_PARITY_ODD
+        && (config->stop_bits == 1U || config->stop_bits == 2U);
+}
+
 void PHAL_USART_internalConfigureRegisters(
     PHAL_USART_Handle_t *handle,
-    const PHAL_USART_Config_t *config,
+    const PHAL_USART_InternalConfig_t *config,
     uint32_t baud_register
 ) {
     uint32_t cr1 = 0U;
-    if (config->parity != PHAL_USART_PARITY_NONE) {
+    if (config->parity != PHAL_USART_INTERNAL_PARITY_NONE) {
         cr1 |= USART_CR1_PCE;
-        if (config->parity == PHAL_USART_PARITY_ODD) {
+        if (config->parity == PHAL_USART_INTERNAL_PARITY_ODD) {
             cr1 |= USART_CR1_PS;
         }
     }
@@ -169,8 +177,7 @@ void PHAL_USART_internalConfigureRegisters(
 
     config->instance->BRR = baud_register;
     config->instance->CR1 = cr1;
-    config->instance->CR2 = ((uint32_t)config->stop_bits << USART_CR2_STOP_Pos)
-        & USART_CR2_STOP_Msk;
+    config->instance->CR2 = config->stop_bits == 2U ? (2U << USART_CR2_STOP_Pos) : 0U;
     config->instance->CR3 = cr3;
     config->instance->ICR = USART_ICR_PECF | USART_ICR_FECF | USART_ICR_NECF
         | USART_ICR_ORECF | USART_ICR_IDLECF | USART_ICR_TCCF;
