@@ -84,37 +84,30 @@ GPIOInitConfig_t gpio_config[] = {
 };
 
 /* ADC Configuration */
-ADCInitConfig_t adc_config = {
-    .prescaler      = ADC_CLK_PRESC_2,
-    .resolution     = ADC_RES_12_BIT,
-    .data_align     = ADC_DATA_ALIGN_RIGHT,
-    .cont_conv_mode = true,
-    .dma_mode       = ADC_DMA_CIRCULAR,
-    .periph         = ADC1,
+volatile raw_adc_values_t raw_adc_values;
+const PHAL_ADC_ChannelConfig_t adc_channel_config[] = {
+    {.channel = THROTTLE1_ADC_CHANNEL, .rank = 1, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = THROTTLE2_ADC_CHANNEL, .rank = 2, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = REGEN1_ADC_CHANNEL, .rank = 3, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = REGEN2_ADC_CHANNEL, .rank = 4, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = BRAKE1_PRESSURE_ADC_CHANNEL, .rank = 5, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES},
+    {.channel = BRAKE2_PRESSURE_ADC_CHANNEL, .rank = 6, .sample_time = PHAL_ADC_SAMPLE_480_CYCLES}
 };
-
-ADCChannelConfig_t adc_channel_config[] = {
-    {.channel = THROTTLE1_ADC_CHANNEL, .rank = 1, .sampling_time = ADC_CHN_SMP_CYCLES_480},
-    {.channel = THROTTLE2_ADC_CHANNEL, .rank = 2, .sampling_time = ADC_CHN_SMP_CYCLES_480},
-    {.channel = REGEN1_ADC_CHANNEL, .rank = 3, .sampling_time = ADC_CHN_SMP_CYCLES_480},
-    {.channel = REGEN2_ADC_CHANNEL, .rank = 4, .sampling_time = ADC_CHN_SMP_CYCLES_480},
-    {.channel = BRAKE1_PRESSURE_ADC_CHANNEL, .rank = 5, .sampling_time = ADC_CHN_SMP_CYCLES_480},
-    {.channel = BRAKE2_PRESSURE_ADC_CHANNEL, .rank = 6, .sampling_time = ADC_CHN_SMP_CYCLES_480}
-};
-
 static_assert(
     (sizeof(raw_adc_values_t) / sizeof(uint16_t)) ==
-    (sizeof(adc_channel_config) / sizeof(ADCChannelConfig_t)),
+    (sizeof(adc_channel_config) / sizeof(PHAL_ADC_ChannelConfig_t)),
     "ADC channel config and raw ADC values struct must have the same number of channels"
 );
-
-volatile raw_adc_values_t raw_adc_values; // DMA target
-
-dma_init_t adc_dma_config =
-ADC1_DMA_CONT_CONFIG(
-    (uint32_t)&raw_adc_values,
-    sizeof(raw_adc_values) / sizeof(raw_adc_values.throttle1), 0b01
-);
+PHAL_ADC_Handle_t adc_handle;
+const PHAL_ADC_Config_t adc_config = {
+    .instance      = ADC1,
+    .resolution    = PHAL_ADC_RESOLUTION_12_BIT,
+    .alignment     = PHAL_ADC_ALIGNMENT_RIGHT,
+    .oversampling  = PHAL_ADC_OVERSAMPLING_NONE,
+    .channels      = adc_channel_config,
+    .channel_count = sizeof(adc_channel_config) / sizeof(adc_channel_config[0]),
+    .continuous    = true,
+};
 
 // USART Configuration for LCD
 dma_init_t usart_tx_dma_config = USART1_TXDMA_CONT_CONFIG(NULL, 1);
@@ -173,14 +166,13 @@ int main(void) {
     if (false == PHAL_initUSART(&lcd, APB2ClockRateHz)) {
         HardFault_Handler();
     }
-    if (false == PHAL_initADC(&adc_config, adc_channel_config, countof(adc_channel_config))) {
+    if (!PHAL_ADC_init(&adc_handle, &adc_config)) {
         HardFault_Handler();
     }
-    if (false == PHAL_initDMA(&adc_dma_config)) {
+    if (!PHAL_ADC_start(&adc_handle, (uint16_t *)&raw_adc_values,
+                        sizeof(raw_adc_values) / sizeof(uint16_t))) {
         HardFault_Handler();
     }
-    PHAL_startTxfer(&adc_dma_config);
-    PHAL_startADC(&adc_config);
 
     if (false == PHAL_FDCAN_init(FDCAN2, false, VCAN_BAUD_RATE)) {
         HardFault_Handler();
