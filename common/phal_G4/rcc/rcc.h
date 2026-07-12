@@ -6,9 +6,13 @@
 
 #include "common/phal_G4/phal_G4.h"
 
+/** External high-speed oscillator frequency assumed by board configurations. */
 #define HSE_CLOCK_RATE_HZ 16000000U
+/** Internal high-speed oscillator frequency. */
 #define HSI_CLOCK_RATE_HZ 16000000U
 
+/** @name STM32G474 PLL and system-clock limits
+ *  Values enforced by PHAL_RCC_configure(). @{ */
 #define RCC_MAX_VCO_RATE_HZ           344000000U
 #define RCC_MIN_VCO_RATE_HZ            64000000U
 #define RCC_MIN_PLL_INPUT_DIVISOR            1U
@@ -16,17 +20,21 @@
 #define RCC_MIN_PLL_OUTPUT_MULTIPLIER        8U
 #define RCC_MAX_PLL_OUTPUT_MULTIPLIER      127U
 #define RCC_MAX_SYSCLK_TARGET_HZ     170000000U
+/** @} */
 
+/** Oscillator source supplied to the main PLL. */
 typedef enum {
-    PLL_SRC_HSI16,
-    PLL_SRC_HSE
+    PLL_SRC_HSI16, /**< Use the 16 MHz internal high-speed oscillator. */
+    PLL_SRC_HSE    /**< Use the external high-speed oscillator. */
 } PLLSrc_t;
 
+/** Direct system-clock oscillator source. */
 typedef enum {
-    CLOCK_SOURCE_HSI,
-    CLOCK_SOURCE_HSE,
+    CLOCK_SOURCE_HSI, /**< Use the internal high-speed oscillator. */
+    CLOCK_SOURCE_HSE, /**< Use the external high-speed oscillator. */
 } ClockSrc_t;
 
+/** Semantic clock-tree configuration for the STM32G474. */
 typedef struct {
     /** Direct SYSCLK source when use_pll is false. */
     ClockSrc_t clock_source;
@@ -47,9 +55,6 @@ typedef struct {
     /** Use an externally driven HSE clock rather than a crystal. */
     bool hse_bypass;
 } PHAL_RCC_Config_t;
-
-/** Compatibility name retained while G4 board initializers migrate. */
-typedef PHAL_RCC_Config_t ClockRateConfig_t;
 
 /**
  * @brief Configure the G4 system, AHB, and APB clocks.
@@ -100,17 +105,5 @@ uint32_t PHAL_RCC_apb2ClockHz(void);
  * @return The FDCAN kernel clock frequency, or zero for an unsupported source.
  */
 uint32_t PHAL_RCC_fdcanClockHz(void);
-
-/**
- * @deprecated Use PHAL_RCC_configure(), which returns true on success.
- * @return 0 on success; 1 on failure. Retained only for source compatibility.
- */
-uint8_t PHAL_configureClockRates(ClockRateConfig_t *config);
-
-/* Deprecated data symbols for source-compatible board migration only. */
-extern uint32_t APB1ClockRateHz;
-extern uint32_t APB2ClockRateHz;
-extern uint32_t AHBClockRateHz;
-extern uint32_t PLLClockRateHz;
 
 #endif
