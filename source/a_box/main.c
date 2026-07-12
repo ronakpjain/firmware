@@ -25,17 +25,17 @@
 #include "common/watchdog/watchdog.h"
 #include "telemetry.h"
 
-SPI_InitConfig_t bms_spi_config = {
-    .data_len      = 8,
-    .nss_sw        = false, // BMS drive CS pin manually to ensure correct timing
-    .nss_gpio_port = SPI1_CS_PORT,
-    .nss_gpio_pin  = SPI1_CS_PIN,
-    .rx_dma_cfg    = nullptr,
-    .tx_dma_cfg    = nullptr,
-    .periph        = SPI1,
-    .cpol          = 0,
-    .cpha          = 0,
-    .data_rate     = 500'000, // 500 kHz SPI clock for ADBMS6380
+PHAL_SPI_Handle_t bms_spi_handle;
+static const PHAL_SPI_Config_t bms_spi_config = {
+    .instance              = SPI1,
+    .mode                  = PHAL_SPI_MODE_MASTER,
+    .data_rate_hz          = 500'000,
+    .frame_size_bits      = 8,
+    .clock_polarity_high  = false,
+    .clock_phase_second_edge = false,
+    .software_chip_select = false, // BMS drives CS manually for timing
+    .chip_select_port     = SPI1_CS_PORT,
+    .chip_select_pin      = SPI1_CS_PIN,
 };
 
 PHAL_ADC_Handle_t adc_handle;
@@ -129,14 +129,13 @@ int main(void) {
         HardFault_Handler();
     }
 
-    // Set CS high to start
-    adbms6380_set_cs_high(&bms_spi_config);
-
-    if (!PHAL_SPI_init(&bms_spi_config)) {
+    if (!PHAL_SPI_init(&bms_spi_handle, &bms_spi_config)) {
         HardFault_Handler();
     }
 
-    adbms_init(&g_bms, &bms_spi_config, g_bms_tx_buf);
+    // The handle owns the configured CS port/pin after successful initialization.
+    adbms6380_set_cs_high(&bms_spi_handle);
+    adbms_init(&g_bms, &bms_spi_handle, g_bms_tx_buf);
 
     if (!PHAL_ADC_init(&adc_handle, &adc_config)) {
         HardFault_Handler();

@@ -128,7 +128,7 @@ typedef struct {
     bool is_balancing_enabled;
 
     /** SPI instance used for ADBMS communication (CS control is manual by ADBMS6380 driver). */
-    SPI_InitConfig_t *spi;
+    PHAL_SPI_Handle_t *spi;
     /** Scratch TX buffer wrapper for command/data packets. */
     strbuf_t tx_strbuf;
     /** RX buffer for multi-module readouts. */
@@ -163,7 +163,7 @@ typedef struct {
  * @param spi SPI configuration used for ADBMS transactions.
  * @param tx_buf Backing buffer for TX command/data packets.
  */
-void adbms_init(adbms_bms_t *bms, SPI_InitConfig_t *spi, uint8_t *tx_buf);
+void adbms_init(adbms_bms_t *bms, PHAL_SPI_Handle_t *spi, uint8_t *tx_buf);
 
 /**
  * @brief Calculate and write REGA configuration to all modules.
