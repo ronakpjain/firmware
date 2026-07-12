@@ -5,11 +5,6 @@
 extern uint32_t SystemCoreClock;
 extern void SystemCoreClockUpdate(void);
 
-uint32_t APB1ClockRateHz;
-uint32_t APB2ClockRateHz;
-uint32_t AHBClockRateHz;
-uint32_t PLLClockRateHz;
-
 static uint32_t system_clock_hz;
 static uint32_t ahb_clock_hz;
 static uint32_t apb1_clock_hz;
@@ -33,13 +28,6 @@ static bool wait_for_field(volatile uint32_t *registers, uint32_t mask, uint32_t
         }
     }
     return false;
-}
-
-static void publish_rates(void) {
-    APB1ClockRateHz = apb1_clock_hz;
-    APB2ClockRateHz = apb2_clock_hz;
-    AHBClockRateHz = ahb_clock_hz;
-    PLLClockRateHz = pll_vco_hz;
 }
 
 static uint32_t source_rate(ClockSrc_t source) {
@@ -163,7 +151,6 @@ static bool configure_pll_vco_internal(PLLSrc_t pll_source, uint32_t target_hz, 
     RCC->PLLCFGR = pllcfgr;
 
     pll_vco_hz = target_hz;
-    publish_rates();
     return true;
 }
 
@@ -223,7 +210,6 @@ static bool configure_pll_system_clock(uint32_t system_clock_target_hz) {
 
     system_clock_hz = system_clock_target_hz;
     SystemCoreClockUpdate();
-    publish_rates();
     return true;
 }
 
@@ -291,7 +277,7 @@ static bool apb2_divider(uint32_t ratio, uint32_t *encoded) {
     }
 }
 
-static bool configure_ahb_clock(uint32_t ahb_clock_target_hz) {
+bool PHAL_RCC_internalConfigureAhbClock(uint32_t ahb_clock_target_hz) {
     if (system_clock_hz == 0U || ahb_clock_target_hz == 0U
         || system_clock_hz % ahb_clock_target_hz != 0U) {
         return false;
@@ -309,11 +295,10 @@ static bool configure_ahb_clock(uint32_t ahb_clock_target_hz) {
     RCC->CFGR = cfgr;
     ahb_clock_hz = system_clock_hz / ratio;
     SystemCoreClockUpdate();
-    publish_rates();
     return true;
 }
 
-static bool configure_apb1_clock(uint32_t apb1_clock_target_hz) {
+bool PHAL_RCC_internalConfigureApb1Clock(uint32_t apb1_clock_target_hz) {
     if (ahb_clock_hz == 0U || apb1_clock_target_hz == 0U
         || ahb_clock_hz % apb1_clock_target_hz != 0U) {
         return false;
@@ -330,11 +315,10 @@ static bool configure_apb1_clock(uint32_t apb1_clock_target_hz) {
     cfgr |= encoded;
     RCC->CFGR = cfgr;
     apb1_clock_hz = ahb_clock_hz / ratio;
-    publish_rates();
     return true;
 }
 
-static bool configure_apb2_clock(uint32_t apb2_clock_target_hz) {
+bool PHAL_RCC_internalConfigureApb2Clock(uint32_t apb2_clock_target_hz) {
     if (ahb_clock_hz == 0U || apb2_clock_target_hz == 0U
         || ahb_clock_hz % apb2_clock_target_hz != 0U) {
         return false;
@@ -351,11 +335,10 @@ static bool configure_apb2_clock(uint32_t apb2_clock_target_hz) {
     cfgr |= encoded;
     RCC->CFGR = cfgr;
     apb2_clock_hz = ahb_clock_hz / ratio;
-    publish_rates();
     return true;
 }
 
-bool PHAL_RCC_internalConfigure(const PHAL_RCC_Config_t *config) {
+bool PHAL_RCC_internalValidateConfig(const PHAL_RCC_Config_t *config) {
     if (config == NULL || config->clock_source > CLOCK_SOURCE_HSE
         || config->system_clock_target_hz == 0U || config->ahb_clock_target_hz == 0U
         || config->apb1_clock_target_hz == 0U || config->apb2_clock_target_hz == 0U
@@ -370,63 +353,41 @@ bool PHAL_RCC_internalConfigure(const PHAL_RCC_Config_t *config) {
     uint32_t ignored;
     const uint32_t pll_ratio = config->use_pll && config->system_clock_target_hz != 0U
         ? config->vco_output_rate_target_hz / config->system_clock_target_hz : 0U;
-    if (!ahb_divider(config->system_clock_target_hz / config->ahb_clock_target_hz, &ignored)
-        || !apb1_divider(config->ahb_clock_target_hz / config->apb1_clock_target_hz, &ignored)
-        || !apb2_divider(config->ahb_clock_target_hz / config->apb2_clock_target_hz, &ignored)
-        || (config->use_pll && (config->pll_src > PLL_SRC_HSE
-            || config->vco_output_rate_target_hz % config->system_clock_target_hz != 0U
-            || (pll_ratio != 2U && pll_ratio != 4U && pll_ratio != 6U && pll_ratio != 8U)))) {
+    return ahb_divider(config->system_clock_target_hz / config->ahb_clock_target_hz, &ignored)
+        && apb1_divider(config->ahb_clock_target_hz / config->apb1_clock_target_hz, &ignored)
+        && apb2_divider(config->ahb_clock_target_hz / config->apb2_clock_target_hz, &ignored)
+        && (!config->use_pll || (config->pll_src <= PLL_SRC_HSE
+            && config->vco_output_rate_target_hz % config->system_clock_target_hz == 0U
+            && (pll_ratio == 2U || pll_ratio == 4U || pll_ratio == 6U || pll_ratio == 8U)));
+}
+
+bool PHAL_RCC_internalConfigureSystemClock(const PHAL_RCC_Config_t *config) {
+    if (config == NULL) {
         return false;
     }
 
     if (config->use_pll) {
-        if (!configure_pll_vco_internal(
-                config->pll_src,
-                config->vco_output_rate_target_hz,
-                config->hse_bypass)
-            || !configure_pll_system_clock(config->system_clock_target_hz)) {
-            return false;
-        }
-    } else {
-        if (config->clock_source == CLOCK_SOURCE_HSI) {
-            if (!configure_hsi_system_clock()) {
-                return false;
-            }
-        } else {
-            RCC->CR &= ~(RCC_CR_HSEON | RCC_CR_HSEBYP);
-            if (config->hse_bypass) {
-                RCC->CR |= RCC_CR_HSEBYP;
-            }
-            if (!configure_hse_system_clock()) {
-                return false;
-            }
-        }
+        return configure_pll_vco_internal(
+                   config->pll_src,
+                   config->vco_output_rate_target_hz,
+                   config->hse_bypass)
+            && configure_pll_system_clock(config->system_clock_target_hz);
     }
 
-    if (!configure_ahb_clock(config->ahb_clock_target_hz)
-        || !configure_apb1_clock(config->apb1_clock_target_hz)
-        || !configure_apb2_clock(config->apb2_clock_target_hz)) {
-        return false;
+    if (config->clock_source == CLOCK_SOURCE_HSI) {
+        return configure_hsi_system_clock();
     }
 
+    RCC->CR &= ~(RCC_CR_HSEON | RCC_CR_HSEBYP);
+    if (config->hse_bypass) {
+        RCC->CR |= RCC_CR_HSEBYP;
+    }
+    return configure_hse_system_clock();
+}
+
+void PHAL_RCC_internalSelectFdcanClock(void) {
     uint32_t ccipr = RCC->CCIPR;
     ccipr &= ~RCC_CCIPR_FDCANSEL_Msk;
     ccipr |= RCC_CCIPR_FDCANSEL_1; /* PCLK1 */
     RCC->CCIPR = ccipr;
-    publish_rates();
-    return true;
-}
-
-uint32_t PHAL_RCC_internalSystemClockHz(void) { return system_clock_hz; }
-uint32_t PHAL_RCC_internalAhbClockHz(void) { return ahb_clock_hz; }
-uint32_t PHAL_RCC_internalApb1ClockHz(void) { return apb1_clock_hz; }
-uint32_t PHAL_RCC_internalApb2ClockHz(void) { return apb2_clock_hz; }
-
-uint32_t PHAL_RCC_internalFdcanClockHz(void) {
-    const uint32_t source = (RCC->CCIPR & RCC_CCIPR_FDCANSEL_Msk) >> RCC_CCIPR_FDCANSEL_Pos;
-    switch (source) {
-        case 0U: return HSE_CLOCK_RATE_HZ;
-        case 2U: return apb1_clock_hz;
-        default: return 0U;
-    }
 }
