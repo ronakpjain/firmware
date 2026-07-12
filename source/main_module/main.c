@@ -100,13 +100,17 @@ int main(void) {
     }
 
     // CAN init
-    if (false == PHAL_FDCAN_init(FDCAN2, false, VCAN_BAUD_RATE)) {
+    if (!PHAL_CAN_init(&PHAL_CAN2, &(PHAL_CAN_Config_t){
+            .bit_rate = VCAN_BAUD_RATE, .loopback = false})) {
         HardFault_Handler();
     }
-    if (false == PHAL_FDCAN_init(FDCAN3, false, MCAN_BAUD_RATE)) {
+    if (!PHAL_CAN_init(&PHAL_CAN3, &(PHAL_CAN_Config_t){
+            .bit_rate = MCAN_BAUD_RATE, .loopback = false})) {
         HardFault_Handler();
     }
-    CAN_init();
+    if (!CAN_init()) {
+        HardFault_Handler();
+    }
 
     vehicle_init(); // ! important for amks
 

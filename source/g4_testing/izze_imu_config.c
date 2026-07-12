@@ -36,6 +36,7 @@ PHAL_RCC_Config_t clock_config = {
     .apb2_clock_target_hz      = (TargetCoreClockrateHz / (1)),
 };
 
+
 void HardFault_Handler();
 
 static constexpr uint16_t NEW_CAN_BASE_ID = 0x4EE;
@@ -74,11 +75,13 @@ int main() {
     PHAL_GPIO_write(ERROR_LED_PORT, ERROR_LED_PIN, 0);
     PHAL_GPIO_write(CONNECTION_LED_PORT, CONNECTION_LED_PIN, 0);
 
-    if (!PHAL_FDCAN_init(FDCAN2, false, GCAN_BAUD_RATE)) {
+    if (!PHAL_CAN_init(&PHAL_CAN2, &(PHAL_CAN_Config_t){.bit_rate = GCAN_BAUD_RATE, .loopback = false})) {
         HardFault_Handler();
     }
 
-    CAN_init();
+    if (!CAN_init()) {
+        HardFault_Handler();
+    }
 
     osKernelInitialize();
 

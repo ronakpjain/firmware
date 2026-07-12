@@ -1,11 +1,11 @@
 // FDCAN filter setup for {{ fdcan_ctx.periph }}
-static inline void {{ fdcan_ctx.periph }}_set_filters() {
+static inline bool {{ fdcan_ctx.periph }}_set_filters(void) {
     {% if fdcan_ctx.accept_all %}
-    // Accept all messages - filters configured in PHAL_FDCAN_init() by default
-    (void)0;
+    // PHAL_CAN_init() installs the default accept-all policy.
+    return true;
     {% elif fdcan_ctx.has_filters %}
     {% if fdcan_ctx.std_ids %}
-    static uint32_t sid_list[] = {
+    static const uint32_t sid_list[] = {
         {% for msg in fdcan_ctx.std_ids %}
         {{ msg.macro_name }}_MSG_ID{{ "," if not loop.last }}
         {% endfor %}
@@ -13,28 +13,22 @@ static inline void {{ fdcan_ctx.periph }}_set_filters() {
     {% endif %}
 
     {% if fdcan_ctx.ext_ids %}
-    static uint32_t xid_list[] = {
+    static const uint32_t xid_list[] = {
         {% for msg in fdcan_ctx.ext_ids %}
         {{ msg.macro_name }}_MSG_ID{{ "," if not loop.last }}
         {% endfor %}
     };
     {% endif %}
 
-    PHAL_FDCAN_setFilters(
-        {{ fdcan_ctx.periph }},
-        {% if fdcan_ctx.std_ids %}
-        sid_list, {{ fdcan_ctx.std_ids|length }},
-        {% else %}
-        NULL, 0,
-        {% endif %}
-        {% if fdcan_ctx.ext_ids %}xid_list,
-        {{ fdcan_ctx.ext_ids|length }}
-        {% else %}
-        NULL, 0
-        {% endif %}
-    );
+    const PHAL_CAN_FilterConfig_t filters = {
+        .standard_ids = {% if fdcan_ctx.std_ids %}sid_list{% else %}NULL{% endif %},
+        .standard_id_count = {{ fdcan_ctx.std_ids|length }},
+        .extended_ids = {% if fdcan_ctx.ext_ids %}xid_list{% else %}NULL{% endif %},
+        .extended_id_count = {{ fdcan_ctx.ext_ids|length }},
+    };
+    return PHAL_CAN_setFilters(&PHAL_CAN{{ fdcan_ctx.periph[-1] }}, &filters);
     {% else %}
-    // No filters configured
-    (void)0;
+    // No filters configured; retain PHAL's default accept-all policy.
+    return true;
     {% endif %}
 }

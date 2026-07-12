@@ -6,6 +6,14 @@ static inline void CAN_SEND_{{ entry.msg.name }}(
     {{ codec.signal.c_type }} {{ codec.signal.name }}{{ "," if not loop.last }}
 {% endfor %}
 ) {
+{% if entry.is_fdcan %}
+    PHAL_CAN_Message_t outgoing = {
+        .id = {% if entry.msg.is_extended %}{{ entry.msg.macro_name }}_MSG_ID{% else %}{{ entry.msg.macro_name }}_MSG_ID{% endif %},
+        .extended = {{ "true" if entry.msg.is_extended else "false" }},
+        .length = {{ entry.msg.macro_name }}_DLC,
+        .data = {0}
+    };
+{% else %}
     CanMsgTypeDef_t outgoing = {
         .Bus = {{ entry.periph }},
         {% if entry.msg.is_extended %}
@@ -18,6 +26,7 @@ static inline void CAN_SEND_{{ entry.msg.name }}(
         .DLC = {{ entry.msg.macro_name }}_DLC,
         .Data = {0}
     };
+{% endif %}
 
     uint64_t payload = 0;
     {% for codec in entry.codecs %}
@@ -31,7 +40,7 @@ static inline void CAN_SEND_{{ entry.msg.name }}(
     payload = CAN_pack_raw_signal(payload, sig_raw_{{ codec.signal.name }}, {{ codec.signal.mask|to_c_hex }}, {{ codec.signal.bit_shift }}, {{ codec.bswap_width }});
     {% endfor %}
 
-    CAN_store_payload_u64(outgoing.Data, payload, {{ entry.msg.macro_name }}_DLC);
+    CAN_store_payload_u64(outgoing.{% if entry.is_fdcan %}data{% else %}Data{% endif %}, payload, {{ entry.msg.macro_name }}_DLC);
 
     {{ entry.enqueue_func }}(&outgoing);
 }

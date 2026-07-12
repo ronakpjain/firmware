@@ -273,6 +273,9 @@ void PHAL_CAN_internalProgramFilters(
     const PHAL_CAN_FilterConfig_t *filters
 ) {
     FDCAN_GlobalTypeDef *instance = handle->instance;
+    if (instance == NULL) {
+        return;
+    }
     const uintptr_t base = PHAL_CAN_internalRamBase(instance);
     volatile uint32_t *standard = (volatile uint32_t *)(base + SRAMCAN_FLSSA);
     volatile uint32_t *extended = (volatile uint32_t *)(base + SRAMCAN_FLESA);
@@ -312,7 +315,8 @@ void PHAL_CAN_internalStoreFilterCounts(
     if (state == NULL) {
         return;
     }
-    state->standard_filter_count = filters->standard_id_count;    state->extended_filter_count = filters->extended_id_count;
+    state->standard_filter_count = filters->standard_id_count;
+    state->extended_filter_count = filters->extended_id_count;
 }
 
 bool PHAL_CAN_internalValidateHandle(const PHAL_CAN_Handle_t *handle) {
@@ -334,13 +338,17 @@ bool PHAL_CAN_internalValidateMessage(
 }
 
 bool PHAL_CAN_internalWriteTx(PHAL_CAN_Handle_t *handle, const PHAL_CAN_Message_t *message) {
-    const uint32_t status = handle->instance->TXFQS;
+    FDCAN_GlobalTypeDef *instance = handle->instance;
+    if (instance == NULL) {
+        return false;
+    }
+    const uint32_t status = instance->TXFQS;
     const uint32_t put = (status & FDCAN_TXFQS_TFQPI_Msk) >> FDCAN_TXFQS_TFQPI_Pos;
     if (put >= SRAMCAN_TFQ_NBR) {
         return false;
     }
 
-    const uintptr_t base = PHAL_CAN_internalRamBase(handle->instance);
+    const uintptr_t base = PHAL_CAN_internalRamBase(instance);
     volatile uint32_t *tx = (volatile uint32_t *)(base + SRAMCAN_TFQSA
         + (put * SRAMCAN_TFQ_SIZE));
     tx[0] = message->extended
@@ -353,7 +361,7 @@ bool PHAL_CAN_internalWriteTx(PHAL_CAN_Handle_t *handle, const PHAL_CAN_Message_
     memcpy(&data1, &message->data[4], sizeof(data1));
     tx[2] = data0;
     tx[3] = data1;
-    handle->instance->TXBAR = 1UL << put;
+    instance->TXBAR = 1UL << put;
     return true;
 }
 
@@ -367,6 +375,9 @@ static uint8_t dlc_to_length(uint8_t dlc) {
 
 static bool receive_one(PHAL_CAN_Handle_t *handle, PHAL_CAN_Message_t *message) {
     FDCAN_GlobalTypeDef *instance = handle->instance;
+    if (instance == NULL) {
+        return false;
+    }
     const uint32_t status = instance->RXF0S;
     if ((status & FDCAN_RXF0S_F0FL_Msk) == 0U || message == NULL) {
         return false;

@@ -112,10 +112,13 @@ int main(void) {
                                      sizeof(rover_rx_buffer))) {
         HardFault_Handler();
     }
-    if (false == PHAL_FDCAN_init(FDCAN2, false, VCAN_BAUD_RATE)) {
+    if (!PHAL_CAN_init(&PHAL_CAN2, &(PHAL_CAN_Config_t){
+            .bit_rate = VCAN_BAUD_RATE, .loopback = false})) {
         HardFault_Handler();
     }
-    CAN_init();
+    if (!CAN_init()) {
+        HardFault_Handler();
+    }
 
     initialize_calibration();
 
