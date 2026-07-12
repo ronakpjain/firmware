@@ -110,21 +110,15 @@ const PHAL_ADC_Config_t adc_config = {
 };
 
 // USART Configuration for LCD
-dma_init_t usart_tx_dma_config = USART1_TXDMA_CONT_CONFIG(NULL, 1);
-dma_init_t usart_rx_dma_config = USART1_RXDMA_CONT_CONFIG(NULL, 2);
-usart_init_t lcd = {
-    .baud_rate        = LCD_BAUD_RATE,
-    .word_length      = WORD_8,
-    .stop_bits        = SB_ONE,
-    .parity           = PT_NONE,
-    .hw_flow_ctl      = HW_DISABLE,
-    .ovsample         = OV_16,
-    .obsample         = OB_DISABLE,
-    .periph           = USART1,
-    .wake_addr        = false,
-    .usart_active_num = USART1_ACTIVE_IDX,
-    .tx_dma_cfg       = &usart_tx_dma_config,
-    .rx_dma_cfg       = &usart_rx_dma_config,
+PHAL_USART_Handle_t lcd;
+static const PHAL_USART_Config_t lcd_config = {
+    .instance      = USART1,
+    .baud_rate     = LCD_BAUD_RATE,
+    .word_length   = 8,
+    .parity        = PHAL_USART_PARITY_NONE,
+    .stop_bits     = PHAL_USART_STOP_BITS_1,
+    .hardware_rts  = false,
+    .hardware_cts  = false,
 };
 
 static constexpr uint32_t TargetCoreClockrateHz = 16'000'000;
@@ -163,7 +157,7 @@ int main(void) {
     if (false == PHAL_initGPIO(gpio_config, countof(gpio_config))) {
         HardFault_Handler();
     }
-    if (false == PHAL_initUSART(&lcd, APB2ClockRateHz)) {
+    if (!PHAL_USART_init(&lcd, &lcd_config)) {
         HardFault_Handler();
     }
     if (!PHAL_ADC_init(&adc_handle, &adc_config)) {
