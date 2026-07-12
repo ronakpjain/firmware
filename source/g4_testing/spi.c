@@ -2,19 +2,14 @@
 #include "stm32g474xx.h"
 #if (G4_TESTING_CHOSEN == TEST_SPI)
 
-// #include <string.h>
-
-#include "common/phal_G4/dma/dma.h"
-#include "common/phal_G4/gpio/gpio.h"
-#include "common/phal_G4/rcc/rcc.h"
-#include "common/phal_G4/spi/spi.h"
+#include "common/phal/gpio.h"
+#include "common/phal/rcc.h"
+#include "common/phal/spi.h"
 #include "common/utils/countof.h"
 
-// Prototypes
 void HardFault_Handler();
 
-// Clock Configuration
-#define TargetCoreClockrateHz 16000000
+#define TargetCoreClockrateHz 16000000U
 PHAL_RCC_Config_t clock_config = {
     .clock_source           = CLOCK_SOURCE_HSI,
     .use_pll                = false,
@@ -23,63 +18,37 @@ PHAL_RCC_Config_t clock_config = {
     .apb1_clock_target_hz   = TargetCoreClockrateHz,
     .apb2_clock_target_hz   = TargetCoreClockrateHz,
 };
-// GPIO Configuration: example pins for SPI1 (master) and SPI2 (slave)
-// Adjust to your board wiring. SPI1: PA5=SCK, PA7=MOSI, PA6=MISO; PA4=CS
-// SPI2: PB13=SCK, PB15=MOSI, PB14=MISO; PB12=CS
+
 GPIOInitConfig_t gpio_config[] = {
-    // SPI1 - Standard Pins
     GPIO_INIT_SPI1SCK_PA5,
     GPIO_INIT_SPI1MOSI_PA7,
     GPIO_INIT_SPI1MISO_PA6,
-    GPIO_INIT_OUTPUT(GPIOA, 4, GPIO_OUTPUT_ULTRA_SPEED), // NSS as software output for master
-
-    // SPI2 - RET Specific (Port B)
+    GPIO_INIT_OUTPUT(GPIOA, 4, GPIO_OUTPUT_ULTRA_SPEED),
     GPIO_INIT_SPI2SCK_RET_PB13,
     GPIO_INIT_SPI2MOSI_RET_PB15,
     GPIO_INIT_SPI2MISO_RET_PB14,
-    GPIO_INIT_SPI2NSS_RET_PB12, // Hardware NSS for SPI2 slave
+    GPIO_INIT_SPI2NSS_RET_PB12,
 };
 
-// DMA Buffers
 #define XFER_LEN 8
 static uint8_t master_tx[XFER_LEN] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
-static uint8_t master_rx[XFER_LEN] = {0};
-static uint8_t slave_tx[XFER_LEN]  = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x12, 0x34};
-static uint8_t slave_rx[XFER_LEN]  = {0};
+static uint8_t master_rx[XFER_LEN];
+static uint8_t slave_tx[XFER_LEN] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0x12, 0x34};
+static uint8_t slave_rx[XFER_LEN];
 
-// DMA configs
-static dma_init_t spi1_rx_dma = SPI1_RXDMA_CONT_CONFIG(NULL, 1);
-static dma_init_t spi1_tx_dma = SPI1_TXDMA_CONT_CONFIG(NULL, 2);
-static dma_init_t spi2_rx_dma = SPI2_RXDMA_CONT_CONFIG(NULL, 1);
-static dma_init_t spi2_tx_dma = SPI2_TXDMA_CONT_CONFIG(NULL, 2);
-
-// SPI configs
-static SPI_InitConfig_t spi1 = {
-    .periph        = SPI1,
-    .data_rate     = 1000000,
-    .data_len      = 8,
-    .mode          = SPI_MODE_MASTER,
-    .nss_sw        = true,
-    .nss_gpio_port = GPIOA,
-    .nss_gpio_pin  = (1 << 4),
-    .cpol          = 0,
-    .cpha          = 0,
-    .rx_dma_cfg    = &spi1_rx_dma,
-    .tx_dma_cfg    = &spi1_tx_dma,
+static PHAL_SPI_Handle_t spi1;
+static PHAL_SPI_Handle_t spi2;
+static const PHAL_SPI_Config_t spi1_config = {
+    .instance = SPI1, .mode = PHAL_SPI_MODE_MASTER, .data_rate_hz = 1000000U,
+    .frame_size_bits = 8, .clock_polarity_high = false,
+    .clock_phase_second_edge = false, .software_chip_select = true,
+    .chip_select_port = GPIOA, .chip_select_pin = 4,
 };
-
-static SPI_InitConfig_t spi2 = {
-    .periph        = SPI2,
-    .data_rate     = 1000000,
-    .data_len      = 8,
-    .mode          = SPI_MODE_SLAVE,
-    .nss_sw        = false, // use hardware NSS via PB12
-    .nss_gpio_port = GPIOB,
-    .nss_gpio_pin  = (1 << 12),
-    .cpol          = 0,
-    .cpha          = 0,
-    .rx_dma_cfg    = &spi2_rx_dma,
-    .tx_dma_cfg    = &spi2_tx_dma,
+static const PHAL_SPI_Config_t spi2_config = {
+    .instance = SPI2, .mode = PHAL_SPI_MODE_SLAVE, .data_rate_hz = 1000000U,
+    .frame_size_bits = 8, .clock_polarity_high = false,
+    .clock_phase_second_edge = false, .software_chip_select = false,
+    .chip_select_port = GPIOB, .chip_select_pin = 12,
 };
 
 int main() {
@@ -87,23 +56,17 @@ int main() {
         HardFault_Handler();
     if (!PHAL_initGPIO(gpio_config, countof(gpio_config)))
         HardFault_Handler();
-
-    if (!PHAL_SPI_init(&spi1))
-        HardFault_Handler();
-    if (!PHAL_SPI_init(&spi2))
+    if (!PHAL_SPI_init(&spi1, &spi1_config) || !PHAL_SPI_init(&spi2, &spi2_config))
         HardFault_Handler();
 
-    // DMA two-device test: SPI1 master -> SPI2 slave
-    PHAL_SPI_transfer(&spi2, slave_tx, XFER_LEN, slave_rx);
-    PHAL_SPI_transfer(&spi1, master_tx, XFER_LEN, master_rx);
-    while (PHAL_SPI_busy(&spi1) || PHAL_SPI_busy(&spi2))
-        ;
+    if (!PHAL_SPI_transfer(&spi2, slave_tx, slave_rx, XFER_LEN)
+        || !PHAL_SPI_transfer(&spi1, master_tx, master_rx, XFER_LEN))
+        HardFault_Handler();
+    while (PHAL_SPI_busy(&spi1) || PHAL_SPI_busy(&spi2)) {
+    }
 
-    // Non-DMA loopback test: tie PA7 (MOSI) to PA6 (MISO)
-    PHAL_SPI_transfer_noDMA(&spi1, master_tx, XFER_LEN, XFER_LEN, master_rx);
-    while (PHAL_SPI_busy(&spi1))
-        ;
-
+    if (!PHAL_SPI_transferBlocking(&spi1, master_tx, master_rx, XFER_LEN, 1000000U))
+        HardFault_Handler();
     return 0;
 }
 

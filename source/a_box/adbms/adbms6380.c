@@ -18,15 +18,15 @@
 #include "common/phal/spi.h"
 #include "pec.h"
 
-void adbms6380_set_cs_low(SPI_InitConfig_t *spi) {
-    PHAL_writeGPIO(spi->nss_gpio_port, spi->nss_gpio_pin, false);
+void adbms6380_set_cs_low(PHAL_SPI_Handle_t *spi) {
+    PHAL_GPIO_write(spi->chip_select_port, spi->chip_select_pin, false);
 }
 
-void adbms6380_set_cs_high(SPI_InitConfig_t *spi) {
-    PHAL_writeGPIO(spi->nss_gpio_port, spi->nss_gpio_pin, true);
+void adbms6380_set_cs_high(PHAL_SPI_Handle_t *spi) {
+    PHAL_GPIO_write(spi->chip_select_port, spi->chip_select_pin, true);
 }
 
-void adbms6380_wake(SPI_InitConfig_t *spi, size_t module_count) {
+void adbms6380_wake(PHAL_SPI_Handle_t *spi, size_t module_count) {
     for (size_t i = 0; i < module_count; i++) {
         adbms6380_set_cs_low(spi);
         osDelay(ADBMS6380_WAKE_DELAY_MS);
@@ -154,7 +154,7 @@ bool adbms6380_check_data_pec(const uint8_t *rx_bytes, size_t rx_len) {
     return calculated_pec == received_pec;
 }
 
-adbms6380_read_result_t adbms6380_read(SPI_InitConfig_t *spi,
+adbms6380_read_result_t adbms6380_read(PHAL_SPI_Handle_t *spi,
                                        size_t module_count,
                                        const uint8_t cmd_buffer[ADBMS6380_COMMAND_PKT_SIZE],
                                        uint8_t *rx_buffer,
@@ -162,13 +162,13 @@ adbms6380_read_result_t adbms6380_read(SPI_InitConfig_t *spi,
     // Send command and get response
     adbms6380_set_cs_low(spi);
     // First send command. Command is passed to all modules in the daisy chain.
-    if (!PHAL_SPI_transfer_noDMA(spi, cmd_buffer, ADBMS6380_COMMAND_PKT_SIZE, 0, NULL)) {
+    if (!PHAL_SPI_transferBlocking(spi, cmd_buffer, NULL, ADBMS6380_COMMAND_PKT_SIZE, 1000000U)) {
         adbms6380_set_cs_high(spi);
         return ADBMS6380_READ_SPI_FAILURE;
     }
     // Then read data back. Data is in order of module 0 ... module N-1
     size_t total_rx_length = module_count * rx_length_per_module;
-    if (!PHAL_SPI_transfer_noDMA(spi, NULL, 0, total_rx_length, rx_buffer)) {
+    if (!PHAL_SPI_transferBlocking(spi, NULL, rx_buffer, total_rx_length, 1000000U)) {
         adbms6380_set_cs_high(spi);
         return ADBMS6380_READ_SPI_FAILURE;
     }
@@ -186,7 +186,7 @@ adbms6380_read_result_t adbms6380_read(SPI_InitConfig_t *spi,
 }
 
 adbms6380_read_result_t
-adbms6380_read_data_with_retries(SPI_InitConfig_t *spi,
+adbms6380_read_data_with_retries(PHAL_SPI_Handle_t *spi,
                                  size_t max_retries,
                                  size_t module_count,
                                  const uint8_t cmd_buffer[ADBMS6380_COMMAND_PKT_SIZE],
@@ -212,7 +212,7 @@ adbms6380_read_data_with_retries(SPI_InitConfig_t *spi,
     return ADBMS6380_READ_PEC_FAILURE;
 }
 
-adbms6380_read_result_t adbms6380_read_data(SPI_InitConfig_t *spi,
+adbms6380_read_result_t adbms6380_read_data(PHAL_SPI_Handle_t *spi,
                                             size_t module_count,
                                             const uint8_t cmd_buffer[ADBMS6380_COMMAND_PKT_SIZE],
                                             uint8_t *rx_buffer) {
@@ -220,7 +220,7 @@ adbms6380_read_result_t adbms6380_read_data(SPI_InitConfig_t *spi,
     return adbms6380_read(spi, module_count, cmd_buffer, rx_buffer, rx_length_per_module);
 }
 
-bool adbms6380_read_cell_voltages(SPI_InitConfig_t *spi,
+bool adbms6380_read_cell_voltages(PHAL_SPI_Handle_t *spi,
                                   strbuf_t *cmd_buffer,
                                   uint8_t *rx_buffer,
                                   float **cell_voltages,
@@ -278,7 +278,7 @@ bool adbms6380_read_cell_voltages(SPI_InitConfig_t *spi,
     return true;
 }
 
-bool adbms6380_read_gpio_voltages(SPI_InitConfig_t *spi,
+bool adbms6380_read_gpio_voltages(PHAL_SPI_Handle_t *spi,
                                   strbuf_t *cmd_buffer,
                                   uint8_t *rx_buffer,
                                   float **gpio_voltages,
