@@ -63,13 +63,13 @@ typedef enum {
  *
  * @param spi SPI configuration containing the CS GPIO.
  */
-void adbms6380_set_cs_low(SPI_InitConfig_t *spi);
+void adbms6380_set_cs_low(PHAL_SPI_Handle_t *spi);
 /**
  * @brief Drive the ADBMS CS line to high.
  *
  * @param spi SPI configuration containing the CS GPIO.
  */
-void adbms6380_set_cs_high(SPI_InitConfig_t *spi);
+void adbms6380_set_cs_high(PHAL_SPI_Handle_t *spi);
 
 /**
  * @brief Wake a daisy-chained set of ADBMS devices.
@@ -79,7 +79,7 @@ void adbms6380_set_cs_high(SPI_InitConfig_t *spi);
  * @param spi SPI configuration containing the CS GPIO.
  * @param module_count Number of modules in the daisy chain.
  */
-void adbms6380_wake(SPI_InitConfig_t *spi, size_t module_count);
+void adbms6380_wake(PHAL_SPI_Handle_t *spi, size_t module_count);
 
 /**
  * @brief Convert a voltage threshold (V) into 12-bit REG_B threshold encoding.
@@ -211,7 +211,7 @@ bool adbms6380_check_data_pec(const uint8_t *rx_bytes, size_t rx_len);
  * @param rx_length_per_module Number of bytes expected from each module (including PEC).
  * @return A result code indicating success, PEC failure, or SPI failure.
  */
-adbms6380_read_result_t adbms6380_read(SPI_InitConfig_t *spi,
+adbms6380_read_result_t adbms6380_read(PHAL_SPI_Handle_t *spi,
                                        size_t module_count,
                                        const uint8_t cmd_buffer[ADBMS6380_COMMAND_PKT_SIZE],
                                        uint8_t *rx_buffer,
@@ -228,7 +228,7 @@ adbms6380_read_result_t adbms6380_read(SPI_InitConfig_t *spi,
  * @param rx_buffer Output buffer for received bytes.
  * @return A result code indicating success, PEC failure, or SPI failure.
  */
-adbms6380_read_result_t adbms6380_read_data(SPI_InitConfig_t *spi,
+adbms6380_read_result_t adbms6380_read_data(PHAL_SPI_Handle_t *spi,
                                             size_t module_count,
                                             const uint8_t cmd_buffer[ADBMS6380_COMMAND_PKT_SIZE],
                                             uint8_t *rx_buffer);
@@ -247,7 +247,7 @@ adbms6380_read_result_t adbms6380_read_data(SPI_InitConfig_t *spi,
  * @return A result code indicating success, PEC failure, or SPI failure.
  */
 adbms6380_read_result_t
-adbms6380_read_data_with_retries(SPI_InitConfig_t *spi,
+adbms6380_read_data_with_retries(PHAL_SPI_Handle_t *spi,
                                  size_t max_retries,
                                  size_t module_count,
                                  const uint8_t cmd_buffer[ADBMS6380_COMMAND_PKT_SIZE],
@@ -273,7 +273,7 @@ adbms6380_read_data_with_retries(SPI_InitConfig_t *spi,
                                      failure is detected before giving up.
  * @return True on success, false on SPI failure.
  */
-bool adbms6380_read_cell_voltages(SPI_InitConfig_t *spi,
+bool adbms6380_read_cell_voltages(PHAL_SPI_Handle_t *spi,
                                   strbuf_t *cmd_buffer,
                                   uint8_t *rx_buffer,
                                   float **cell_voltages,
@@ -300,7 +300,7 @@ bool adbms6380_read_cell_voltages(SPI_InitConfig_t *spi,
                                      failure is detected before giving up.
  * @return True on success, false on SPI failure.
  */
-bool adbms6380_read_gpio_voltages(SPI_InitConfig_t *spi,
+bool adbms6380_read_gpio_voltages(PHAL_SPI_Handle_t *spi,
                                   strbuf_t *cmd_buffer,
                                   uint8_t *rx_buffer,
                                   float **gpio_voltages,

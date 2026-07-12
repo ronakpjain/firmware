@@ -11,32 +11,31 @@
 
 /** SPI controller operating mode. */
 typedef enum {
-    PHAL_SPI_MODE_MASTER,
-    PHAL_SPI_MODE_SLAVE
+    PHAL_SPI_MODE_MASTER, /**< Generate the serial clock as bus controller. */
+    PHAL_SPI_MODE_SLAVE   /**< Receive the serial clock as bus peripheral. */
 } PHAL_SPI_Mode_t;
 
+/** Semantic configuration used to initialize an SPI handle. */
 typedef struct {
-    SPI_TypeDef *instance;
-    PHAL_SPI_Mode_t mode;
-    uint32_t data_rate_hz;
-    uint8_t frame_size_bits;
-    bool clock_polarity_high;
-    bool clock_phase_second_edge;
-    bool software_chip_select;
-    GPIO_TypeDef *chip_select_port;
-    uint8_t chip_select_pin;
+    SPI_TypeDef *instance;       /**< SPI1, SPI2, or SPI3 register block. */
+    PHAL_SPI_Mode_t mode;        /**< Controller operating mode. */
+    uint32_t data_rate_hz;       /**< Maximum requested serial clock frequency. */
+    bool software_chip_select;   /**< Drive chip select through GPIO when true. */
+    GPIO_TypeDef *chip_select_port; /**< Software chip-select GPIO port. */
+    uint8_t chip_select_pin;     /**< Software chip-select pin number, 0 through 15. */
 } PHAL_SPI_Config_t;
 
+/** Runtime state for one initialized SPI controller and its DMA routes. */
 typedef struct {
-    SPI_TypeDef *instance;
-    PHAL_DMA_Handle_t tx_dma;
-    PHAL_DMA_Handle_t rx_dma;
-    GPIO_TypeDef *chip_select_port;
-    uint8_t chip_select_pin;
-    bool software_chip_select;
-    bool initialized;
-    volatile bool busy;
-    volatile bool transfer_success;
+    SPI_TypeDef *instance;       /**< Configured SPI register block. */
+    PHAL_DMA_Handle_t tx_dma;    /**< Privately managed transmit DMA handle. */
+    PHAL_DMA_Handle_t rx_dma;    /**< Privately managed receive DMA handle. */
+    GPIO_TypeDef *chip_select_port; /**< Software chip-select GPIO port. */
+    uint8_t chip_select_pin;     /**< Software chip-select pin number. */
+    bool software_chip_select;   /**< Whether PHAL controls chip select through GPIO. */
+    bool initialized;            /**< Whether initialization completed successfully. */
+    volatile bool busy;          /**< Whether a full-duplex transfer is active. */
+    volatile bool transfer_success; /**< Result of the most recently completed transfer. */
 } PHAL_SPI_Handle_t;
 
 /**
@@ -49,12 +48,13 @@ typedef struct {
  * peripheral registers and optionally the software chip-select GPIO.
  *
  * @param handle Storage-backed SPI handle that remains valid after initialization.
- * @param config Semantic SPI configuration; frame_size_bits must currently be 8.
+ * @param config SPI instance, mode, rate, and chip-select ownership. PHAL fixes
+ *               frames to eight bits and uses clock mode 0 (CPOL=0, CPHA=0).
  * @return true The peripheral and both fixed DMA routes were initialized.
  * @return false Invalid argument, unsupported instance/rate, or occupied DMA route.
  *
  * @note This function blocks for register configuration but performs no transfer.
- * @note GPIO pins must be configured by PHAL_GPIO_initGPIO before use.
+ * @note GPIO pins must be configured by PHAL_GPIO_init() before use.
  * @note DMA IRQ handlers are installed centrally by the G4 DMA module.
  */
 bool PHAL_SPI_init(PHAL_SPI_Handle_t *handle, const PHAL_SPI_Config_t *config);
@@ -70,7 +70,7 @@ bool PHAL_SPI_init(PHAL_SPI_Handle_t *handle, const PHAL_SPI_Config_t *config);
  * @return false Invalid state/argument, busy handle, or DMA setup failure.
  *
  * @note This function does not block. Completion is reflected by PHAL_SPI_busy()
- * and the saved result returned by PHAL_SPI_transferBlocking().
+ * and the saved result returned by PHAL_SPI_transfer_noDMA().
  * @note When software_chip_select is enabled, PHAL asserts/releases the GPIO
  * around the complete transfer.
  */
@@ -82,7 +82,7 @@ bool PHAL_SPI_transfer(
 );
 
 /**
- * @brief Start a DMA transfer and wait for its bounded completion.
+ * @brief Perform a synchronous transfer by waiting for DMA completion.
  *
  * @param handle Initialized SPI handle.
  * @param tx_data Source bytes, or NULL for zero-filled transmission.
@@ -94,7 +94,7 @@ bool PHAL_SPI_transfer(
  *
  * @note This function blocks and aborts the transfer when timeout reaches zero.
  */
-bool PHAL_SPI_transferBlocking(
+bool PHAL_SPI_transfer_noDMA(
     PHAL_SPI_Handle_t *handle,
     const uint8_t *tx_data,
     uint8_t *rx_data,
@@ -161,28 +161,16 @@ bool PHAL_SPI_writeRegister(
  */
 bool PHAL_SPI_forceReset(PHAL_SPI_Handle_t *handle);
 
-/** Deprecated ambiguous-value compatibility wrappers. */
-uint8_t PHAL_SPI_readByte(PHAL_SPI_Handle_t *handle, uint8_t address, bool skip_dummy);
-uint8_t PHAL_SPI_writeByte(PHAL_SPI_Handle_t *handle, uint8_t address, uint8_t write_data);
-void PHAL_SPI_ForceReset(PHAL_SPI_Handle_t *handle);
-
 /**
- * @brief Deprecated command-plus-dummy compatibility wrapper implemented through DMA.
- * @param handle Initialized SPI handle.
- * @param out_data Bytes transmitted during the command phase, or NULL to transmit zeroes.
- * @param tx_length Number of command-phase bytes.
- * @param rx_length Number of additional zero-filled clocks after the command phase.
- * @param in_data Optional buffer for all `tx_length + rx_length` received bytes.
- * @return true when the DMA transfer completed successfully; false on invalid input, timeout,
- *         hardware failure, or a total transfer longer than 256 bytes.
- * @note This function blocks. Migrate callers to PHAL_SPI_transferBlocking().
+ * @brief Report completion of an asynchronous SPI transfer.
+ * @param handle SPI handle whose transfer completed.
+ * @param success Whether both DMA directions and SPI teardown succeeded.
+ * @note Weak default callback; override it in application code when asynchronous
+ *       completion handling is required.
+ * @note Executes from a DMA interrupt context. Keep the implementation bounded
+ *       and use interrupt-safe synchronization primitives.
+ * @note The callback is also invoked with false when an active transfer is aborted.
  */
-bool PHAL_SPI_transfer_noDMA(
-    PHAL_SPI_Handle_t *handle,
-    const uint8_t *out_data,
-    uint32_t tx_length,
-    uint32_t rx_length,
-    uint8_t *in_data
-);
+void PHAL_SPI_transferCompleteCallback(PHAL_SPI_Handle_t *handle, bool success);
 
 #endif

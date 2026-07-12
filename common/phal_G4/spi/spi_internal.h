@@ -6,8 +6,20 @@
 
 #define PHAL_SPI_INTERNAL_TIMEOUT 100000U
 
-bool PHAL_SPI_internalValidateConfig(const PHAL_SPI_Config_t *config);
-bool PHAL_SPI_internalConfigureRegisters(const PHAL_SPI_Config_t *config);
+typedef struct {
+    SPI_TypeDef *instance;
+    PHAL_SPI_Mode_t mode;
+    uint32_t data_rate_hz;
+    uint8_t frame_size_bits;
+    bool clock_polarity_high;
+    bool clock_phase_second_edge;
+    bool software_chip_select;
+    GPIO_TypeDef *chip_select_port;
+    uint8_t chip_select_pin;
+} PHAL_SPI_InternalConfig_t;
+
+bool PHAL_SPI_internalValidateConfig(const PHAL_SPI_InternalConfig_t *config);
+bool PHAL_SPI_internalConfigureRegisters(const PHAL_SPI_InternalConfig_t *config);
 bool PHAL_SPI_internalInitializeDma(PHAL_SPI_Handle_t *handle, SPI_TypeDef *instance);
 void PHAL_SPI_internalInitializeHandle(
     PHAL_SPI_Handle_t *handle,
