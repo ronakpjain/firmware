@@ -18,6 +18,7 @@
 void bangbang_update(bangbang_t *controller, float value, uint32_t current_time) {
     uint32_t time_since_last_switch = current_time - controller->last_switch_ms;
     bool hysteresis_passed = time_since_last_switch >= controller->min_switch_interval;
+    bool was_on = controller->is_on;
 
     // update the internal state of the controller
     if (controller->is_on) {
@@ -32,7 +33,11 @@ void bangbang_update(bangbang_t *controller, float value, uint32_t current_time)
         }
     }
 
-    // call the appropriate function based on the state (if it exists)
+    // Callbacks represent transitions, not repeated notifications of the state.
+    if (controller->is_on == was_on) {
+        return;
+    }
+
     if (controller->is_on) {
         if (controller->on_func != nullptr) controller->on_func();
     } else {
