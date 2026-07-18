@@ -40,6 +40,25 @@ You can view available build targets and options with:
 python3 per_build.py --help
 ```
 
+## Unit Tests
+
+Unit tests use GoogleTest and run on the host machine, independently of the
+STM32 cross-compiled firmware build. GoogleTest is downloaded at its pinned
+revision when the tests are configured for the first time.
+
+On Windows, run the tests from the WSL environment described in the setup guide.
+
+To configure, build, and run all tests through the project build script:
+
+```bash
+python3 per_build.py --test
+```
+
+The host suite builds isolated executables so each test group receives only the
+fakes and compile definitions it needs. Test sources live in the owning module's
+`tests/` directory; shared fakes and runtime support live under `tests/` at the
+repository root.
+
 ## Hardware Debugging 
 
 In VS Code, go to **View → Run and Debug**, select the appropriate MCU target from the dropdown, then press the green ▶️ arrow to flash and live-debug the firmware.

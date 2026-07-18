@@ -44,6 +44,7 @@ BOARD_TARGETS = [
 # Get build directory path
 CWD = pathlib.Path.cwd()
 BUILD_DIR = CWD/"build"
+TEST_BUILD_DIR = CWD / "build-tests"
 SOURCE_DIR = CWD
 OUT_DIR = CWD/"output"
 CAN_GEN_DIR = SOURCE_DIR/"can_library"/"generated"
@@ -79,6 +80,55 @@ parser.add_option("-p", "--package",
     help="package build output into tarball with CRCs, suffixed by Git hash"
 )
 
+parser.add_option("--test",
+    dest="test",
+    action="store_true", default=False,
+    help="configure, build, and run host unit tests"
+)
+
+
+def run_unit_tests(verbose):
+    configure_command = [
+        "cmake",
+        "-S", str(SOURCE_DIR / "tests"),
+        "-B", str(TEST_BUILD_DIR),
+        "-G", "Ninja",
+    ]
+    build_command = [
+        "cmake",
+        "--build", str(TEST_BUILD_DIR),
+        "--parallel",
+    ]
+    test_command = [
+        "ctest",
+        "--test-dir", str(TEST_BUILD_DIR),
+        "--output-on-failure",
+        "--no-tests=error",
+        "--parallel",
+    ]
+
+    if verbose:
+        build_command.append("--verbose")
+        test_command.append("--verbose")
+
+    commands = [
+        ("configure unit tests", configure_command),
+        ("build unit tests", build_command),
+        ("run unit tests", test_command),
+    ]
+
+    for action, command in commands:
+        print(f"Running command: {' '.join(command)}", flush=True)
+        try:
+            subprocess.run(command, check=True)
+        except subprocess.CalledProcessError:
+            log_error(f"Unable to {action}, see the output above.")
+            return 1
+
+    log_success("Successfully ran unit tests.")
+    return 0
+
+
 def print_available_targets():
     modules = [
         "main_module",
@@ -102,6 +152,12 @@ if options.list:
     # User ran `-t` with no argument: print available targets
     print_available_targets()
     sys.exit(0)
+
+if options.test:
+    if options.target or options.bootloader or options.package:
+        log_error("--test cannot be combined with --target, --bootloader, or --package.")
+        sys.exit(1)
+    sys.exit(run_unit_tests(options.verbose))
 
 VERBOSE = "--verbose" if options.verbose else ""
 
