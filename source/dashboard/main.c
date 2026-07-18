@@ -200,6 +200,7 @@ int main(void) {
 
     START_CAN_TASKS();
     CAN_SEND_dash_init(WDG_get_CSR());
+    CAN_SEND_mark_data(0U, 0xF17EU); // Startup marker for trace correlation
     START_TASK(pedals_periodic);
     START_TASK(fault_library_periodic);
     START_TASK(driver_interface_periodic);
