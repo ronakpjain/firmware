@@ -13,38 +13,22 @@ bool PHAL_initGPIO(GPIOInitConfig_t config[], uint8_t config_len) {
     uint8_t afr_i;
 
     for (int i = 0; i < config_len; i++) {
-        switch ((uint32_t)config[i].bank) {
-            case (uint32_t)GPIOA:
-                RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
-                break;
-
-            case (uint32_t)GPIOB:
-                RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
-                break;
-
-            case (uint32_t)GPIOC:
-                RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
-                break;
-
-            case (uint32_t)GPIOD:
-                RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;
-                break;
-
-            case (uint32_t)GPIOE:
-                RCC->AHB2ENR |= RCC_AHB2ENR_GPIOEEN;
-                break;
-
-            case (uint32_t)GPIOF:
-                RCC->AHB2ENR |= RCC_AHB2ENR_GPIOFEN;
-                break;
-
-            case (uint32_t)GPIOG:
-                RCC->AHB2ENR |= RCC_AHB2ENR_GPIOGEN;
-                break;
-
-            default:
-                return false;
-                break;
+        if (config[i].bank == GPIOA) {
+            RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
+        } else if (config[i].bank == GPIOB) {
+            RCC->AHB2ENR |= RCC_AHB2ENR_GPIOBEN;
+        } else if (config[i].bank == GPIOC) {
+            RCC->AHB2ENR |= RCC_AHB2ENR_GPIOCEN;
+        } else if (config[i].bank == GPIOD) {
+            RCC->AHB2ENR |= RCC_AHB2ENR_GPIODEN;
+        } else if (config[i].bank == GPIOE) {
+            RCC->AHB2ENR |= RCC_AHB2ENR_GPIOEEN;
+        } else if (config[i].bank == GPIOF) {
+            RCC->AHB2ENR |= RCC_AHB2ENR_GPIOFEN;
+        } else if (config[i].bank == GPIOG) {
+            RCC->AHB2ENR |= RCC_AHB2ENR_GPIOGEN;
+        } else {
+            return false;
         }
 
         // Setup GPIO output type
