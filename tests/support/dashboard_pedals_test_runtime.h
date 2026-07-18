@@ -1,11 +1,10 @@
 #ifndef DASHBOARD_PEDALS_TEST_RUNTIME_H
 #define DASHBOARD_PEDALS_TEST_RUNTIME_H
 
-#include <stdbool.h>
 #include <stdint.h>
 
 #include "can_library/generated/DASHBOARD.h"
-#include "can_library/generated/can_types.h"
+#include "fault_test_runtime.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,9 +18,6 @@ typedef struct {
 } test_pedal_tx_t;
 
 void test_dashboard_reset(void);
-void test_fault_set_latched(fault_id_t fault_id, bool is_latched);
-float test_fault_last_value(fault_id_t fault_id);
-uint32_t test_fault_update_count(fault_id_t fault_id);
 void test_dashboard_set_raw_adc(
     uint16_t throttle1,
     uint16_t throttle2,

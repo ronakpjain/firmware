@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "board_phal_fake.h"
-#include "dashboard_pedals_test_runtime.h"
+#include "fault_test_runtime.h"
 #include "stm32g474xx.h"
 
 #ifdef __cplusplus

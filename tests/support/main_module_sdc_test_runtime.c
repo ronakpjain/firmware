@@ -7,7 +7,7 @@ static uint32_t delay_total_ticks;
 
 void test_main_module_reset(void) {
     test_board_phal_reset();
-    test_dashboard_reset();
+    test_fault_reset();
     delay_call_count = 0;
     delay_total_ticks = 0;
 }

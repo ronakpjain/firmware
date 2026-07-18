@@ -52,6 +52,10 @@ To configure, build, and run all tests through the project build script:
 python3 per_build.py --test
 ```
 
+The host suite builds isolated executables for shared/common code, A-box, dashboard,
+main-module, and driveline tests. Each board executable receives only the fakes and
+compile definitions needed by that board.
+
 ## Hardware Debugging 
 
 In VS Code, go to **View → Run and Debug**, select the appropriate MCU target from the dropdown, then press the green ▶️ arrow to flash and live-debug the firmware.

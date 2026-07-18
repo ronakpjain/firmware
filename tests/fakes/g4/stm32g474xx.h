@@ -46,8 +46,8 @@ extern RCC_TypeDef test_rcc;
 #define RCC_AHB2ENR_GPIOFEN (UINT32_C(1) << 5)
 #define RCC_AHB2ENR_GPIOGEN (UINT32_C(1) << 6)
 
-#define GPIO_MODER_MODE0_Msk    UINT32_C(0x3)
-#define GPIO_MODER_MODE1_Pos    2U
+#define GPIO_MODER_MODE0_Msk     UINT32_C(0x3)
+#define GPIO_MODER_MODE1_Pos     2U
 #define GPIO_OSPEEDR_OSPEED0_Msk UINT32_C(0x3)
 #define GPIO_OSPEEDR_OSPEED1_Pos 2U
 #define GPIO_OTYPER_OT0_Msk      UINT32_C(0x1)

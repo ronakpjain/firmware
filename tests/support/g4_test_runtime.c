@@ -4,15 +4,6 @@
 
 #include "common/phal/gpio.h"
 
-GPIO_TypeDef test_gpioa;
-GPIO_TypeDef test_gpiob;
-GPIO_TypeDef test_gpioc;
-GPIO_TypeDef test_gpiod;
-GPIO_TypeDef test_gpioe;
-GPIO_TypeDef test_gpiof;
-GPIO_TypeDef test_gpiog;
-RCC_TypeDef test_rcc;
-
 void test_runtime_reset(void) {
     memset(&test_gpioa, 0, sizeof(test_gpioa));
     memset(&test_gpiob, 0, sizeof(test_gpiob));
