@@ -7,7 +7,7 @@ Standardized framework for CAN communication and system-wide fault management wi
 - `dbc/`: CAN database (DBC) files for external analysis tools.
 - `schema/`: JSON schemas for validating configuration files.
 - `templates/`: Directory containing Jinja2 templates for all generated build artifacts. Decouples the output formatting from the generation logic.
-- `tests/`: Unit tests for both CANpiler and C source code.
+- `tests/`: GoogleTest coverage for the C CAN codec helpers. Run it through the repository's host unit-test workflow.
 
 **Core Files:**
 - [`source/can_init.c`](source/can_init.c) / [`can_common.h`](can_common.h): Bus/peripheral initialization and `CAN_init()`.
