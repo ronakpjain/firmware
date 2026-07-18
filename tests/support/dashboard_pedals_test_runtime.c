@@ -5,9 +5,9 @@
 #include "source/dashboard/main.h"
 #include "source/dashboard/pedals/pedals.h"
 
-volatile raw_adc_values_t raw_adc_values;
+volatile raw_adc_values_t raw_adc_values = {0};
 
-static test_pedal_tx_t last_pedal_tx;
+static test_pedal_tx_t last_pedal_tx = {0};
 
 void test_dashboard_reset(void) {
     memset((void *)&raw_adc_values, 0, sizeof(raw_adc_values));

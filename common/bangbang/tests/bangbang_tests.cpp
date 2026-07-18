@@ -5,8 +5,8 @@ extern "C" {
 }
 
 namespace {
-int on_calls;
-int off_calls;
+int on_calls = 0;
+int off_calls = 0;
 void on() { ++on_calls; }
 void off() { ++off_calls; }
 

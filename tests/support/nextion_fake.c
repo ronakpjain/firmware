@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-nextion_fake_state_t nextion_fake;
+nextion_fake_state_t nextion_fake = {0};
 
 static void remember_object(const char *object) {
     (void)snprintf(nextion_fake.last_object, sizeof(nextion_fake.last_object), "%s", object);

@@ -5,7 +5,7 @@ extern "C" {
 }
 
 namespace {
-int flush_calls;
+int flush_calls = 0;
 void flush() { ++flush_calls; }
 
 class AmkTest : public ::testing::Test {

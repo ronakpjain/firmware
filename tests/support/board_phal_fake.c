@@ -2,10 +2,10 @@
 
 #include <string.h>
 
-#define MAX_GPIO_WRITES 128
+#define MAX_GPIO_WRITES (128U)
 
-static test_gpio_write_t gpio_writes[MAX_GPIO_WRITES];
-static uint32_t gpio_write_count;
+static test_gpio_write_t gpio_writes[MAX_GPIO_WRITES] = {0};
+static uint32_t gpio_write_count = 0;
 
 void test_board_phal_reset(void) {
     memset(gpio_writes, 0, sizeof(gpio_writes));

@@ -2,8 +2,8 @@
 
 #include "source/main_module/sdc/sdc.h"
 
-static uint32_t delay_call_count;
-static uint32_t delay_total_ticks;
+static uint32_t delay_call_count = 0;
+static uint32_t delay_total_ticks = 0;
 
 void test_main_module_reset(void) {
     test_board_phal_reset();

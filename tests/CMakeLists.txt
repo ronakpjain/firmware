@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
+include(CTest)
 
 set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
@@ -21,6 +22,7 @@ FetchContent_Declare(
     URL_HASH SHA256=9a56a54ae784394ff664cd55e8f4c9a03b503ebf0cb99576321c78ab3d87ca84
 )
 FetchContent_MakeAvailable(googletest)
+include(GoogleTest)
 
 set(FIRMWARE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
 set(TEST_FAKE_DIR "${CMAKE_CURRENT_LIST_DIR}/fakes")
@@ -28,12 +30,19 @@ set(TEST_SUPPORT_DIR "${CMAKE_CURRENT_LIST_DIR}/support")
 
 function(add_firmware_test TARGET_NAME)
     cmake_parse_arguments(
+        PARSE_ARGV 1
         TEST
         "G4"
         ""
         "SOURCES;DEFINITIONS;INCLUDE_DIRECTORIES;LIBRARIES"
-        ${ARGN}
     )
+
+    if(TEST_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unknown arguments for ${TARGET_NAME}: ${TEST_UNPARSED_ARGUMENTS}")
+    endif()
+    if(NOT TEST_SOURCES)
+        message(FATAL_ERROR "No sources provided for ${TARGET_NAME}")
+    endif()
 
     add_executable(${TARGET_NAME} ${TEST_SOURCES})
     target_link_libraries(${TARGET_NAME} PRIVATE GTest::gtest_main ${TEST_LIBRARIES})
@@ -59,7 +68,11 @@ function(add_firmware_test TARGET_NAME)
         target_compile_definitions(${TARGET_NAME} PRIVATE STM32G474xx)
     endif()
 
-    set_property(GLOBAL APPEND PROPERTY FIRMWARE_TEST_TARGETS ${TARGET_NAME})
+    gtest_discover_tests(
+        ${TARGET_NAME}
+        TEST_PREFIX "${TARGET_NAME}."
+        PROPERTIES LABELS "${TARGET_NAME}"
+    )
 endfunction()
 
 add_subdirectory(
@@ -68,20 +81,8 @@ add_subdirectory(
 )
 
 add_subdirectory(boards/common)
+add_subdirectory(boards/g4)
 add_subdirectory(boards/a_box)
 add_subdirectory(boards/dashboard)
 add_subdirectory(boards/main_module)
 add_subdirectory(boards/driveline)
-
-get_property(FIRMWARE_TEST_TARGETS GLOBAL PROPERTY FIRMWARE_TEST_TARGETS)
-add_custom_target(unit_tests DEPENDS ${FIRMWARE_TEST_TARGETS})
-
-set(TEST_EXECUTABLE_MANIFEST "")
-foreach(TEST_TARGET IN LISTS FIRMWARE_TEST_TARGETS)
-    string(APPEND TEST_EXECUTABLE_MANIFEST "$<TARGET_FILE:${TEST_TARGET}>\n")
-endforeach()
-file(
-    GENERATE
-    OUTPUT "${CMAKE_BINARY_DIR}/test_executables.txt"
-    CONTENT "${TEST_EXECUTABLE_MANIFEST}"
-)

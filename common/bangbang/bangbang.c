@@ -39,8 +39,10 @@ void bangbang_update(bangbang_t *controller, float value, uint32_t current_time)
     }
 
     if (controller->is_on) {
-        if (controller->on_func != nullptr) controller->on_func();
-    } else {
-        if (controller->off_func != nullptr) controller->off_func();
+        if (controller->on_func != nullptr) {
+            controller->on_func();
+        }
+    } else if (controller->off_func != nullptr) {
+        controller->off_func();
     }
 }

@@ -2,12 +2,12 @@
 
 #include <string.h>
 
-static bool fault_latched[TEST_FAULT_ID_COUNT];
-static float fault_last_values[TEST_FAULT_ID_COUNT];
-static uint32_t fault_update_counts[TEST_FAULT_ID_COUNT];
+static bool fault_latched[TEST_FAULT_ID_COUNT] = {0};
+static float fault_last_values[TEST_FAULT_ID_COUNT] = {0};
+static uint32_t fault_update_counts[TEST_FAULT_ID_COUNT] = {0};
 
 static bool is_valid_fault_id(fault_id_t fault_id) {
-    return (unsigned int)fault_id < TEST_FAULT_ID_COUNT;
+    return (uint32_t)fault_id < TEST_FAULT_ID_COUNT;
 }
 
 void test_fault_reset(void) {
@@ -17,7 +17,9 @@ void test_fault_reset(void) {
 }
 
 void update_fault(fault_id_t fault_id, float value) {
-    if (!is_valid_fault_id(fault_id)) return;
+    if (!is_valid_fault_id(fault_id)) {
+        return;
+    }
     fault_last_values[fault_id] = value;
     fault_update_counts[fault_id]++;
 }
@@ -29,7 +31,9 @@ bool is_latched(fault_id_t fault_id) {
 bool is_clear(fault_id_t fault_id) { return !is_latched(fault_id); }
 
 void test_fault_set_latched(fault_id_t fault_id, bool is_fault_latched) {
-    if (is_valid_fault_id(fault_id)) fault_latched[fault_id] = is_fault_latched;
+    if (is_valid_fault_id(fault_id)) {
+        fault_latched[fault_id] = is_fault_latched;
+    }
 }
 
 float test_fault_last_value(fault_id_t fault_id) {

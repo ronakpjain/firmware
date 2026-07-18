@@ -97,16 +97,24 @@ def run_unit_tests(verbose):
     build_command = [
         "cmake",
         "--build", str(TEST_BUILD_DIR),
-        "--target", "unit_tests",
+        "--parallel",
+    ]
+    test_command = [
+        "ctest",
+        "--test-dir", str(TEST_BUILD_DIR),
+        "--output-on-failure",
+        "--no-tests=error",
         "--parallel",
     ]
 
     if verbose:
         build_command.append("--verbose")
+        test_command.append("--verbose")
 
     commands = [
         ("configure unit tests", configure_command),
         ("build unit tests", build_command),
+        ("run unit tests", test_command),
     ]
 
     for action, command in commands:
@@ -115,30 +123,6 @@ def run_unit_tests(verbose):
             subprocess.run(command, check=True)
         except subprocess.CalledProcessError:
             log_error(f"Unable to {action}, see the output above.")
-            return 1
-
-    manifest_path = TEST_BUILD_DIR / "test_executables.txt"
-    try:
-        test_executables = [
-            pathlib.Path(line)
-            for line in manifest_path.read_text(encoding="utf-8").splitlines()
-            if line
-        ]
-    except OSError as error:
-        log_error(f"Unable to read unit-test manifest {manifest_path}: {error}")
-        return 1
-
-    if not test_executables:
-        log_error(f"Unit-test manifest {manifest_path} did not contain any executables.")
-        return 1
-
-    for test_executable in test_executables:
-        test_command = [str(test_executable)]
-        print(f"Running command: {' '.join(test_command)}", flush=True)
-        try:
-            subprocess.run(test_command, check=True)
-        except subprocess.CalledProcessError:
-            log_error(f"Unit test failed: {test_executable.name}")
             return 1
 
     log_success("Successfully ran unit tests.")

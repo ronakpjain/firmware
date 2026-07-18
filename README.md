@@ -42,7 +42,9 @@ python3 per_build.py --help
 
 ## Unit Tests
 
-Unit tests use GoogleTest and run on the host machine, independently of the STM32 cross-compiled firmware build. GoogleTest is downloaded at its pinned revision when the tests are configured for the first time.
+Unit tests use GoogleTest and run on the host machine, independently of the
+STM32 cross-compiled firmware build. GoogleTest is downloaded at its pinned
+revision when the tests are configured for the first time.
 
 On Windows, run the tests from the WSL environment described in the setup guide.
 
@@ -52,9 +54,11 @@ To configure, build, and run all tests through the project build script:
 python3 per_build.py --test
 ```
 
-The host suite builds isolated executables for shared/common code, A-box, dashboard,
-main-module, and driveline tests. Each board executable receives only the fakes and
-compile definitions needed by that board.
+The host suite builds isolated executables for shared code, G4-specific code,
+A-box, dashboard, main-module, and driveline tests. Each executable receives only
+the fakes and compile definitions it needs. Test sources live in the owning
+module's `tests/` directory; shared fakes and runtime support live under
+`tests/` at the repository root.
 
 ## Hardware Debugging 
 

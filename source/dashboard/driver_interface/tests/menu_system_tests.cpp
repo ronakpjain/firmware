@@ -1,14 +1,12 @@
 #include <gtest/gtest.h>
 
-#include <cstring>
-
 extern "C" {
 #include "source/dashboard/driver_interface/menu_system.h"
 #include "nextion_fake.h"
 }
 
 namespace {
-int change_calls;
+int change_calls = 0;
 void changed() { ++change_calls; }
 
 menu_element_t element(element_type_t type, char *name, uint16_t value = 0) {

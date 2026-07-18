@@ -1,9 +1,9 @@
 add_firmware_test(
-    test_main_module
+    main_module_tests
     G4
     SOURCES
         "${FIRMWARE_SOURCE_DIR}/source/main_module/sdc/sdc.c"
-        "${FIRMWARE_SOURCE_DIR}/source/main_module/sdc/sdc_tests.cpp"
+        "${FIRMWARE_SOURCE_DIR}/source/main_module/sdc/tests/sdc_tests.cpp"
         "${TEST_SUPPORT_DIR}/board_phal_fake.c"
         "${TEST_SUPPORT_DIR}/fault_test_runtime.c"
         "${TEST_SUPPORT_DIR}/g4_register_fake.c"
