@@ -27,6 +27,8 @@ You should use WSL if possible, the choco toolchain for Windows is too old. Inst
 3. VSCode should have good integration with WSL, you can use the windows version of VSCode with WSL extension.
 4. You will have to setup USB on WSL (it is a bit weird). You can do this when you are done with onboarding, and you can build the repository. [Instructions](https://learn.microsoft.com/en-us/windows/wsl/connect-usb)
 
+WSL is the supported Windows environment for running the host unit tests.
+
 Native Windows is still possible:
 1. [Chocolatey](https://chocolatey.org/install#install-step2): Windows package manager Paste and run the installation command provided on the Chocolatey install page.
 	- Open the Start Menu, scroll to W, and locate Windows PowerShell. Right-click on PowerShell and select "Run as Administrator".
@@ -52,7 +54,7 @@ choco install git cmake ninja python3 openocd
 1. You probably already know what you're doing, so here are the commands for `apt` (Ubuntu, Debian, Pop!, etc.):
 ```bash
 sudo apt update && sudo apt upgrade
-sudo apt install git cmake python3 python3-pip ninja-build gcc-arm-none-eabi openocd stlink-tools
+sudo apt install git cmake python3 python3-pip ninja-build g++ gcc-arm-none-eabi openocd stlink-tools
 ```
 2. Visual Studio Code requires some special attention, install from [here](https://code.visualstudio.com/docs/setup/linux).
 

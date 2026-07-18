@@ -1,6 +1,7 @@
 # Keep these empty directories
 !/build
 /build/**
+/build-tests/
 !/output
 /output/**
 
