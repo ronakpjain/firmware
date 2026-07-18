@@ -1,0 +1,19 @@
+add_firmware_test(
+    dashboard_tests
+    G4
+    SOURCES
+        "${FIRMWARE_SOURCE_DIR}/source/dashboard/driver_interface/menu_system.c"
+        "${FIRMWARE_SOURCE_DIR}/source/dashboard/driver_interface/tests/menu_system_tests.cpp"
+        "${FIRMWARE_SOURCE_DIR}/source/dashboard/pedals/pedals.c"
+        "${FIRMWARE_SOURCE_DIR}/source/dashboard/pedals/tests/pedals_tests.cpp"
+        "${TEST_SUPPORT_DIR}/dashboard_pedals_test_runtime.c"
+        "${TEST_SUPPORT_DIR}/fault_test_runtime.c"
+        "${TEST_SUPPORT_DIR}/nextion_fake.c"
+    INCLUDE_DIRECTORIES
+        "${TEST_FAKE_DIR}/g4"
+        "${TEST_FAKE_DIR}"
+        "${TEST_FAKE_DIR}/board"
+        "${FIRMWARE_SOURCE_DIR}/source/dashboard"
+        "${FIRMWARE_SOURCE_DIR}/source/dashboard/driver_interface"
+        "${FIRMWARE_SOURCE_DIR}/source/dashboard/pedals"
+)
