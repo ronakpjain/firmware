@@ -1,0 +1,12 @@
+#ifndef TEST_FAKE_CAN_TYPES_H
+#define TEST_FAKE_CAN_TYPES_H
+
+typedef enum {
+    AMK_STATE_OFF = 0,
+    AMK_STATE_STARTING = 1,
+    AMK_STATE_RUNNING = 2,
+    AMK_STATE_RECOVERING = 3,
+    AMK_STATE_FATAL = 4,
+} AMK_state_t;
+
+#endif // TEST_FAKE_CAN_TYPES_H

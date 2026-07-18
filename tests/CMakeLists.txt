@@ -75,4 +75,9 @@ function(add_firmware_test TARGET_NAME)
     )
 endfunction()
 
+add_subdirectory(
+    "${FIRMWARE_SOURCE_DIR}/common/lerp_lut"
+    "${CMAKE_CURRENT_BINARY_DIR}/lerp_lut"
+)
+
 add_subdirectory(boards/common)
