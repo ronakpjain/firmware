@@ -81,3 +81,4 @@ add_subdirectory(
 )
 
 add_subdirectory(boards/common)
+add_subdirectory(boards/g4)
