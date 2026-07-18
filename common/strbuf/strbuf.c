@@ -36,7 +36,10 @@ size_t strbuf_append(strbuf_t *sb, const void *data, size_t length) {
 
 /**
  * @brief Appends formatted data to the buffer using printf-style formatting.
- * ! @warning This function is unsafe if the formatted string exceeds the remaining buffer space.
+ *
+ * The terminating null byte is stored in the backing buffer but is not included
+ * in length. Consequently, formatted output needs one more free byte than raw
+ * data appended with strbuf_append().
  */
 size_t strbuf_printf(strbuf_t *sb, const char *format, ...) {
     size_t remaining_space = sb->max_len - sb->length;
@@ -51,13 +54,13 @@ size_t strbuf_printf(strbuf_t *sb, const char *format, ...) {
     int len = vsnprintf(NULL, 0, format, args);
     va_end(args);
 
-    if ((size_t)len > remaining_space) {
+    if (len < 0 || (size_t)len >= remaining_space) {
         return 0;
     }
 
     va_start(args, format);
     char *buf_end = (char *)(sb->data + sb->length);
-    vsnprintf(buf_end, remaining_space + 1, format, args);
+    vsnprintf(buf_end, remaining_space, format, args);
     va_end(args);
 
     sb->length += (size_t)len;
