@@ -1,14 +1,10 @@
 var searchData=
 [
-  ['q_5fcan1_5frx_0',['q_can1_rx',['../daq_2main_8h.html#a4f83f786b49764e863b87ecf9ff20bca',1,'main.h']]],
-  ['q_5ffault_5fhistory_1',['q_fault_history',['../lcd_8c.html#abd54b7c198410d9bd98a8925975deb3b',1,'lcd.c']]],
-  ['q_5frx_5fcan_2',['q_rx_can',['../bootloader_2main_8c.html#a6f61f7099706a5b18a5161318a097bd9',1,'q_rx_can:&#160;main.c'],['../l4__testing_2main_8c.html#a6f61f7099706a5b18a5161318a097bd9',1,'q_rx_can:&#160;main.c']]],
-  ['q_5frx_5fcan_5fa_3',['q_rx_can_a',['../bootloader_2can_2can__parse__starter_8c.html#aaff8b712768c6fdcd153bcc291f4e320',1,'q_rx_can_a:&#160;can_parse_starter.c'],['../l4__testing_2can_2can__parse__starter_8c.html#aaff8b712768c6fdcd153bcc291f4e320',1,'q_rx_can_a:&#160;can_parse_starter.c']]],
-  ['q_5ftcp_5ftx_4',['q_tcp_tx',['../daq_2main_8h.html#a8bdc2ff6e3b5e327edd31a8bbe80a2b6',1,'main.h']]],
-  ['q_5ftx_5fcan_5',['q_tx_can',['../bootloader_2main_8c.html#a2c95aa854f1338bfb6e9273572403bda',1,'main.c']]],
-  ['q_5ftx_5fcan2_5fs_6',['q_tx_can2_s',['../main__module_2main_8c.html#a838479af74d9a2fd1f3ddb9a11f33418',1,'main.c']]],
-  ['q_5ftx_5fcan_5f0_7',['q_tx_can_0',['../l4__testing_2main_8c.html#a5aaeaf53ca75391517cd00387dd837b8',1,'main.c']]],
-  ['q_5ftx_5fcan_5f1_8',['q_tx_can_1',['../l4__testing_2main_8c.html#aa4c4aa464a02f86304a513d139efec23',1,'main.c']]],
-  ['q_5ftx_5fcan_5f2_9',['q_tx_can_2',['../l4__testing_2main_8c.html#a66471809e9a22c0c82feb5e06ff5c275',1,'main.c']]],
-  ['q_5ftx_5fusart_10',['q_tx_usart',['../dashboard_2main_8c.html#a03fc7024d283b5f244a599e24049711b',1,'q_tx_usart:&#160;main.c'],['../nextion_8c.html#a03fc7024d283b5f244a599e24049711b',1,'q_tx_usart:&#160;main.c']]]
+  ['taac_0',['TAAC',['../structSD__CSD.html#ab410317204ee5c8db2ed26f0469dc914',1,'SD_CSD']]],
+  ['tempwrprotect_1',['TempWrProtect',['../structSD__CSD.html#a2ee8313de8301ba0e9c40e12b9df4414',1,'SD_CSD']]],
+  ['therms_5ftemps_2',['therms_temps',['../structadbms__module__t.html#aa3b0a2095c3dbf91856b32f124a65cd1',1,'adbms_module_t']]],
+  ['therms_5fvoltages_3',['therms_voltages',['../structadbms__module__t.html#a1b490b9bf2f6348f3380d4deed5502c7',1,'adbms_module_t']]],
+  ['tx_5fdma_5fcfg_4',['tx_dma_cfg',['../structSPI__InitConfig__t.html#aaa9a3f6785303663045a517526a64da1',1,'SPI_InitConfig_t::tx_dma_cfg'],['../structusart__init__t.html#a0c7fab65ad8ab4ea54185a97147a9d06',1,'usart_init_t::tx_dma_cfg']]],
+  ['tx_5ferrors_5',['tx_errors',['../structusart__init__t.html#a07ef62d79c7f5cc1e02a13fa3333652f',1,'usart_init_t']]],
+  ['tx_5fstrbuf_6',['tx_strbuf',['../structadbms__bms__t.html#a9f5eb054ed27b5b9c6dc84903d6d23c7',1,'adbms_bms_t']]]
 ];

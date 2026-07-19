@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['q_5fhandle_5ft_0',['q_handle_t',['../structq__handle__t.html',1,'']]],
-  ['quadspi_5fconfig_5ft_1',['QUADSPI_Config_t',['../structQUADSPI__Config__t.html',1,'']]],
-  ['quaternion_5ft_2',['quaternion_t',['../structquaternion__t.html',1,'']]]
+  ['lerp_5flut_5ft_0',['lerp_lut_t',['../structlerp__lut__t.html',1,'']]],
+  ['lut_5fentry_5ft_1',['lut_entry_t',['../structlut__entry__t.html',1,'']]]
 ];

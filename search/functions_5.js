@@ -1,10 +1,9 @@
 var searchData=
 [
-  ['enableinterrupts_0',['enableInterrupts',['../dashboard_2main_8c.html#ac4b3f0121a2ac45668528454fbf14f64',1,'main.c']]],
-  ['encoderisr_1',['encoderISR',['../dashboard_2main_8c.html#ae2676edb74235f0d21ef201ba600636a',1,'main.c']]],
-  ['error_5fhandler_2',['Error_Handler',['../l4__testing_2main_8c.html#ad4e07955fadfeb416e9620ddb42f8fe9',1,'main.c']]],
-  ['errorpageselect_3',['errorPageSelect',['../lcd_8c.html#a4977670d65c7b5eb50dfd9402463d015',1,'lcd.c']]],
-  ['eth_5fupdate_5fperiodic_4',['eth_update_periodic',['../daq__eth_8c.html#af92254f174f970df107d7b79251da089',1,'eth_update_periodic(void):&#160;daq_eth.c'],['../daq__eth_8h.html#af92254f174f970df107d7b79251da089',1,'eth_update_periodic(void):&#160;daq_eth.c']]],
-  ['exti15_5f10_5firqhandler_5',['EXTI15_10_IRQHandler',['../daq_2main_8c.html#a2089b233bd8d6f7dbf78e075033696e3',1,'EXTI15_10_IRQHandler():&#160;main.c'],['../dashboard_2main_8c.html#a2089b233bd8d6f7dbf78e075033696e3',1,'EXTI15_10_IRQHandler():&#160;main.c']]],
-  ['exti9_5f5_5firqhandler_6',['EXTI9_5_IRQHandler',['../dashboard_2main_8c.html#a7b2096b8b2643286dc3a7e5110e5ae85',1,'main.c']]]
+  ['initialize_5fcalibration_0',['initialize_calibration',['../imu_8c.html#a3da0b33ad58b4a9b357b9ae12a3707b6',1,'initialize_calibration(void):&#160;imu.c'],['../sensors_8h.html#a3da0b33ad58b4a9b357b9ae12a3707b6',1,'initialize_calibration(void):&#160;imu.c']]],
+  ['inject_5ffault_5fmessages_1',['inject_fault_messages',['../namespacefaultgen.html#afe2e346a8ad428ca4e08342785a61c6a',1,'faultgen']]],
+  ['inject_5ffault_5ftypes_2',['inject_fault_types',['../namespacefaultgen.html#a11190d4ffc206ee3ce93696a63e5dcc0',1,'faultgen']]],
+  ['is_5ffdcan_5fperipheral_3',['is_fdcan_peripheral',['../namespacemapper.html#ab89b192dd9148287787db079cf2ae320',1,'mapper']]],
+  ['izze_5facceleration_5fcallback_4',['IZZE_acceleration_CALLBACK',['../imu_8c.html#a4e2ff3413851866d1385d942698f59e9',1,'IZZE_acceleration_CALLBACK(void):&#160;imu.c'],['../sensors_8h.html#a4e2ff3413851866d1385d942698f59e9',1,'IZZE_acceleration_CALLBACK(void):&#160;imu.c']]],
+  ['izze_5fangular_5frate_5fcallback_5',['IZZE_angular_rate_CALLBACK',['../imu_8c.html#a033e363e85c9a7712d85b7fb947a94c0',1,'IZZE_angular_rate_CALLBACK(void):&#160;imu.c'],['../sensors_8h.html#a033e363e85c9a7712d85b7fb947a94c0',1,'IZZE_angular_rate_CALLBACK(void):&#160;imu.c']]]
 ];
