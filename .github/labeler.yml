@@ -1,0 +1,4 @@
+# label: globs (relative to repo root) that trigger it
+"node configs":
+  - changed-files:
+      - any-glob-to-any-file: ['can_library/configs/**']
