@@ -1,0 +1,4 @@
+# label: globs (relative to repo root) that trigger it
+"node configs":
+  - files:
+      - 'can_library/configs/**'
