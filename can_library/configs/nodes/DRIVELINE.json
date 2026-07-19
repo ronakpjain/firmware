@@ -18,7 +18,7 @@
                 },
                 {
                     "msg_name": "rear_driveline_init",
-                    "msg_desc": "Front driveline hardware initialized",
+                    "msg_desc": "Rear driveline hardware initialized (test edit)",
                     "signals": [
                         {
                             "sig_name": "csr",
