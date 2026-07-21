@@ -60,9 +60,8 @@ static void flash_clear_status_flags(void) {
 }
 
 static bool flash_wait_for_last_operation(void) {
-    bool completed_before_timeout = flash_wait_until_not_busy();
-    while ((FLASH->SR & FLASH_SR_BSY) != 0U) {
-        // FLASH_CR cannot be safely changed until the active operation finishes.
+    if (!flash_wait_until_not_busy()) {
+        return false;
     }
 
     uint32_t status = FLASH->SR;
@@ -72,7 +71,7 @@ static bool flash_wait_for_last_operation(void) {
         FLASH->SR = clear_flags;
     }
 
-    return completed_before_timeout && errors == 0U;
+    return errors == 0U;
 }
 
 static bool flash_unlock(void) {
@@ -214,10 +213,14 @@ bool FLASH_PRIV_end_operation(const flash_operation_context_t *context) {
         return false;
     }
 
-    bool success = (FLASH->SR & PHAL_FLASH_STATUS_ERROR_MASK) == 0U;
-    FLASH->CR &= ~PHAL_FLASH_CONTROL_OPERATION_MASK;
-    flash_clear_status_flags();
-    bool locked = flash_lock();
+    bool controller_idle = (FLASH->SR & FLASH_SR_BSY) == 0U;
+    bool success = controller_idle && (FLASH->SR & PHAL_FLASH_STATUS_ERROR_MASK) == 0U;
+    bool locked = false;
+    if (controller_idle) {
+        FLASH->CR &= ~PHAL_FLASH_CONTROL_OPERATION_MASK;
+        flash_clear_status_flags();
+        locked = flash_lock();
+    }
     flash_restore_caches(context);
     flash_release();
     return success && locked;
@@ -248,7 +251,9 @@ bool FLASH_PRIV_program_double_word(uint32_t address, uint64_t data) {
     destination[1] = (uint32_t)(data >> 32U);
 
     bool success = flash_wait_for_last_operation();
-    FLASH->CR &= ~FLASH_CR_PG;
+    if ((FLASH->SR & FLASH_SR_BSY) == 0U) {
+        FLASH->CR &= ~FLASH_CR_PG;
+    }
     return success;
 }
 
@@ -275,6 +280,8 @@ bool FLASH_PRIV_erase_page(uint32_t page_address) {
     FLASH->CR |= FLASH_CR_STRT;
 
     bool success = flash_wait_for_last_operation();
-    FLASH->CR &= ~(FLASH_CR_PER | FLASH_CR_PNB_Msk | FLASH_CR_BKER);
+    if ((FLASH->SR & FLASH_SR_BSY) == 0U) {
+        FLASH->CR &= ~(FLASH_CR_PER | FLASH_CR_PNB_Msk | FLASH_CR_BKER);
+    }
     return success;
 }
