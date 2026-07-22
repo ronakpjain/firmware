@@ -159,3 +159,16 @@ PHAL_USB_deinit();
 Check every boolean return from initialization, endpoint configuration, and
 transfers. `PHAL_USB_get_frame_number(&frame_number)` can be used when a USB
 frame counter is needed.
+
+## Host echo test
+
+The Rust host test in `test/` exercises the bulk echo firmware test:
+
+```sh
+cargo run --manifest-path common/phal_G4/usb/test/Cargo.toml --release
+```
+
+It expects the device descriptor used by `source/g4_testing/usb.c` and sends
+packets to endpoint `0x01`, then verifies the echoed packets from endpoint
+`0x81`. Install `libusb` and grant the host process permission to access the
+device before running it.
