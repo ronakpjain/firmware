@@ -40,10 +40,21 @@ To build only firmware:
 python3 per_build.py firmware --package
 ```
 
-To build DaqApp only only:
+To build DaqApp only:
 ```bash
 python3 per_build.py daqapp
 ```
+
+To run all host tests and generate an HTML coverage report:
+```bash
+python3 per_build.py tests
+```
+
+Run unit tests explicitly with `python3 per_build.py tests unit`. Coverage
+and AddressSanitizer/UBSan are enabled by default; coverage requires `gcov`,
+`lcov`, and `genhtml`, and the report is written to
+`firmware/build/host-tests/coverage/html/index.html`. See
+[tests/ARCHITECTURE.md](tests/ARCHITECTURE.md) for details.
 
 ## Hardware Debugging 
 
