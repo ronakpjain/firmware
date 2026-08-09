@@ -45,13 +45,15 @@ To build DaqApp only:
 python3 per_build.py daqapp
 ```
 
-To run all host unit and firmware/DAQApp CAN compatibility tests:
+To run all host unit tests:
 ```bash
 python3 per_build.py tests
 ```
 
-Run one test layer with `python3 per_build.py tests unit` or
-`python3 per_build.py tests integration`. See
+Run unit tests explicitly with `python3 per_build.py tests unit`. Generate an
+HTML coverage report with `python3 per_build.py tests unit --coverage`; this
+requires `gcov`, `lcov`, and `genhtml`, and writes the report to
+`firmware/build/host-tests/coverage/html/index.html`. See
 [tests/ARCHITECTURE.md](tests/ARCHITECTURE.md) for details.
 
 ## Hardware Debugging 

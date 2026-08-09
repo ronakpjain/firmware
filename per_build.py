@@ -16,6 +16,7 @@ def test_commands(target_args: list[str]) -> list[tuple[list[str], Path]]:
     parser = argparse.ArgumentParser(prog="per_build.py tests", description="Build and run host tests.")
     parser.add_argument("layer", nargs="?", choices=("all", "unit"), default="all")
     parser.add_argument("--sanitizers", action="store_true", help="enable AddressSanitizer and UBSan")
+    parser.add_argument("--coverage", action="store_true", help="generate an lcov HTML coverage report")
     args = parser.parse_args(target_args)
 
     configure = [
@@ -26,8 +27,11 @@ def test_commands(target_args: list[str]) -> list[tuple[list[str], Path]]:
         str(TEST_BUILD),
         f"-DPER_TEST_LAYER={args.layer}",
         f"-DPER_TEST_SANITIZERS={'ON' if args.sanitizers else 'OFF'}",
+        f"-DPER_TEST_COVERAGE={'ON' if args.coverage else 'OFF'}",
     ]
     build = ["cmake", "--build", str(TEST_BUILD)]
+    if args.coverage:
+        return [(configure, ROOT), (build, ROOT), ([*build, "--target", "coverage"], ROOT)]
     run_tests = ["ctest", "--test-dir", str(TEST_BUILD), "--output-on-failure"]
     return [(configure, ROOT), (build, ROOT), (run_tests, ROOT)]
 
@@ -59,7 +63,8 @@ def main() -> int:
             "  python3 per_build.py firmware --package   # pass options to firmware_build.py\n"
             "  python3 per_build.py daqapp --all-targets # pass options to cargo build\n"
             "  python3 per_build.py tests unit           # run the host unit tests\n"
-            "  python3 per_build.py tests --sanitizers   # run host tests with sanitizers"
+            "  python3 per_build.py tests --sanitizers   # run host tests with sanitizers\n"
+            "  python3 per_build.py tests unit --coverage # generate an lcov HTML report"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

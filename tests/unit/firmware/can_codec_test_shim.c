@@ -1,6 +1,7 @@
 #include "can_codec_test_shim.h"
 
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202311L
+// GCC reports the draft C2x value while compiling its C23 implementation.
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 202000L
 #error "can_codec tests must compile this shim as C23 or newer"
 #endif
 

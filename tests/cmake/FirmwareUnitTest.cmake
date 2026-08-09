@@ -5,6 +5,7 @@ function(add_firmware_unit_test)
     endif()
 
     add_executable(${TEST_NAME} ${TEST_TEST_SOURCES})
+    set_property(GLOBAL APPEND PROPERTY PER_TEST_TARGETS ${TEST_NAME})
     target_include_directories(${TEST_NAME} PRIVATE ${TEST_INCLUDE_DIRECTORIES})
     target_link_libraries(${TEST_NAME} PRIVATE GTest::gtest_main)
 
@@ -25,6 +26,18 @@ function(add_firmware_unit_test)
         target_compile_options(${TEST_NAME} PRIVATE -Wall -Wextra -Wpedantic -Werror)
         if(TEST_SOURCES)
             target_compile_options(${TEST_NAME}_firmware PRIVATE -Wall -Wextra -Wpedantic -Werror)
+        endif()
+    endif()
+
+    if(TEST_SOURCES AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+        target_compile_options(${TEST_NAME}_firmware PRIVATE -std=c23)
+    endif()
+
+    if(PER_TEST_COVERAGE)
+        target_compile_options(${TEST_NAME} PRIVATE --coverage)
+        target_link_options(${TEST_NAME} PRIVATE --coverage)
+        if(TEST_SOURCES)
+            target_compile_options(${TEST_NAME}_firmware PRIVATE --coverage)
         endif()
     endif()
 
