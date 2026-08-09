@@ -1,0 +1,20 @@
+<map id="firmware/source/pdu/switches/switches.h" name="firmware/source/pdu/switches/switches.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="343,5,486,46"/>
+<area shape="rect" id="Node000002" href="$cooling__callbacks_8c.html" title="callback functions for bang&#45;bang control" alt="" coords="87,94,270,135"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="348,54,233,96,231,91,346,49"/>
+<area shape="rect" id="Node000003" href="$pdu_2main_8c.html" title="&quot;PDU&quot; node source code" alt="" coords="5,183,144,223"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="381,58,284,137,224,160,145,185,143,180,222,155,281,132,378,54"/>
+<area shape="rect" id="Node000004" href="$state_8h.html" title=" " alt="" coords="345,94,484,135"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="417,62,417,94,412,94,412,62"/>
+<area shape="rect" id="Node000007" href="$switches_8c.html" title=" " alt="" coords="494,183,637,223"/>
+<area shape="poly" id="edge9_Node000001_Node000007" title=" " alt="" coords="456,54,498,92,532,139,557,181,553,183,528,142,494,96,452,58"/>
+<area shape="rect" id="Node000008" href="$pdu_2telemetry_2telemetry_8c.html" title=" " alt="" coords="660,183,806,223"/>
+<area shape="poly" id="edge10_Node000001_Node000008" title=" " alt="" coords="465,51,699,180,696,185,462,56"/>
+<area shape="poly" id="edge5_Node000004_Node000003" title=" " alt="" coords="331,140,145,187,143,181,330,134"/>
+<area shape="rect" id="Node000005" href="$pdu_2faults_2faults_8c.html" title=" " alt="" coords="331,183,469,223"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="411,151,406,183,401,182,406,150"/>
+<area shape="rect" id="Node000006" href="$state_8c.html" title=" " alt="" coords="168,183,306,223"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="362,144,278,185,276,180,360,139"/>
+<area shape="poly" id="edge7_Node000004_Node000007" title=" " alt="" coords="463,140,532,180,530,185,460,145"/>
+<area shape="poly" id="edge8_Node000004_Node000008" title=" " alt="" coords="499,136,661,179,660,185,498,141"/>
+</map>

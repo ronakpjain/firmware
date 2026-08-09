@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['obsample_5ft_0',['obsample_t',['../phal__F4__F7_2usart_2usart_8h.html#a898ff57758aab4eeeae844c6708938e9',1,'usart.h']]],
-  ['ovsample_5ft_1',['ovsample_t',['../phal__F4__F7_2usart_2usart_8h.html#a9fb60e9f8236a52b6c9bd8a310f589a7',1,'usart.h']]]
+  ['decoupling_5fstate_5ft_0',['decoupling_state_t',['../imu_8c.html#a7d318a6a08b0b817d053725e1afd8404',1,'imu.c']]],
+  ['driver_5finterface_5faction_5ft_1',['driver_interface_action_t',['../driver__interface_8h.html#a229e398c86c302f6e87d5be9a8570f89',1,'driver_interface.h']]],
+  ['driver_5finterface_5fstate_5ft_2',['driver_interface_state_t',['../driver__interface_8h.html#a0b28b74cdc60e16623b48a65bf3e3f41',1,'driver_interface.h']]]
 ];

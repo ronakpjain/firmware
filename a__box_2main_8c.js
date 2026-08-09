@@ -1,0 +1,27 @@
+var a__box_2main_8c =
+[
+    [ "bms_task", "a__box_2main_8c.html#a78865f7731d4b7186cdc06c8ff03a0e4", null ],
+    [ "DEFINE_CAN_TASKS", "a__box_2main_8c.html#a577e29103ef4d1e1121dc63cfb074498", null ],
+    [ "DEFINE_HEARTBEAT_TASK", "a__box_2main_8c.html#a845eaf447179a8baf75c69794c49856d", null ],
+    [ "DEFINE_WATCHDOG_TASK", "a__box_2main_8c.html#a11a067a3a0541dc1ed61e5c9bb7591b5", null ],
+    [ "FREERTOS_DEFINE_TASK", "a__box_2main_8c.html#a68689e76c7570ab099549165ac3036f6", null ],
+    [ "FREERTOS_DEFINE_TASK", "a__box_2main_8c.html#a636f3a0d48219571611501a84dc066ad", null ],
+    [ "FREERTOS_DEFINE_TASK", "a__box_2main_8c.html#a9a25b6830964a69b1c72c7b4056f9f47", null ],
+    [ "FREERTOS_DEFINE_TASK", "a__box_2main_8c.html#a2e927f46b264d39c7a76b7da4d57466e", null ],
+    [ "FREERTOS_DEFINE_TASK", "a__box_2main_8c.html#a550eb5e0ce6686f0d0a1a1f81cc44337", null ],
+    [ "FREERTOS_DEFINE_TASK", "a__box_2main_8c.html#a453d02a60bec12de2d29c1464012820c", null ],
+    [ "HardFault_Handler", "a__box_2main_8c.html#a2bffc10d5bd4106753b7c30e86903bea", null ],
+    [ "main", "a__box_2main_8c.html#a840291bc02cba5474a4cb46a9b9566fe", null ],
+    [ "adc1_dma_buffer", "a__box_2main_8c.html#ae25b2d4ee7535b3161795c5914bbd1d1", null ],
+    [ "adc_channels", "a__box_2main_8c.html#aac4007a039922c17a75b7297b2cb0d72", null ],
+    [ "adc_config", "a__box_2main_8c.html#a8bc9fb223f56d390b7afb8df193b3aec", null ],
+    [ "adc_handle", "a__box_2main_8c.html#ae13307269d9ab97e7be91b0569eca21b", null ],
+    [ "bms_spi_config", "a__box_2main_8c.html#ad139ebffcf7f11feddfec40191b40aef", null ],
+    [ "g_bms", "a__box_2main_8c.html#a54910fb29db8c9eac2409cc73cc828c5", null ],
+    [ "g_bms_tx_buf", "a__box_2main_8c.html#a99b892b6086d375bba69c6a4985b3262", null ],
+    [ "gpio_config", "a__box_2main_8c.html#a60563c6df24a123ae18e090bca85f555", null ],
+    [ "MIN_DELTA_FOR_BALANCE", "a__box_2main_8c.html#af63a5e708a1a061eacf7c3437a371490", null ],
+    [ "MIN_V_FOR_BALANCE", "a__box_2main_8c.html#aa3fb4752f26486b9d8283433f0d7a39e", null ],
+    [ "spi1_rx_dma", "a__box_2main_8c.html#a74b59d963c2e2e12058d027a4392f3e8", null ],
+    [ "spi1_tx_dma", "a__box_2main_8c.html#a40a59859bbadb9d8ab250430b7793916", null ]
+];

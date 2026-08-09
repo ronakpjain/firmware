@@ -1,0 +1,9 @@
+<map id="firmware/source/dashboard/driver_interface/pages/faults.c" name="firmware/source/dashboard/driver_interface/pages/faults.c">
+<area shape="rect" id="Node000001" title="Faults page implementation." alt="" coords="5,5,183,61"/>
+<area shape="rect" id="Node000002" href="$dashboard_2driver__interface_2pages_2faults_8h.html" title="Faults page implementation." alt="" coords="6,109,70,135"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="79,63,56,97,52,94,74,60"/>
+<area shape="rect" id="Node000003" href="$menu__system_8h.html" title="Implementation of menu system for LCD display interface." alt="" coords="94,109,206,135"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="114,60,136,94,132,97,109,63"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="118,183,182,208"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="153,135,153,167,147,167,147,135"/>
+</map>
