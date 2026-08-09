@@ -37,3 +37,30 @@ jobs:
           name: host-test-coverage
           path: firmware/build/host-tests/coverage
           if-no-files-found: error
+          retention-days: 14
+
+  publish_coverage:
+    name: Publish coverage to GitHub Pages
+    needs: unit_tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+
+    steps:
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: host-test-coverage
+          path: coverage
+
+      - name: Deploy coverage report
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: coverage/html
+          destination_dir: coverage
+          keep_files: true
