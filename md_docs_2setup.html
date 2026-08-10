@@ -112,7 +112,9 @@ MacOS Tools Setup</h2>
 <li>After installation, ensure brew is installed by running: <code>brew --version</code></li>
 </ul>
 </li>
-<li>Run the following commands in your terminal to install the other tools (you can copy and paste them all at once). <div class="fragment"><div class="line">brew install git cmake ninja openocd stlink python3</div>
+<li>Install Apple’s Command Line Tools if they are not already installed: <div class="fragment"><div class="line">xcode-select --install</div>
+</div><!-- fragment --> The Command Line Tools provide the host compiler and <code>gcov</code> used for coverage.</li>
+<li>Run the following commands in your terminal to install the other tools (you can copy and paste them all at once). <div class="fragment"><div class="line">brew install git cmake ninja openocd stlink python3 lcov googletest</div>
 <div class="line">brew install --cask gcc-arm-embedded</div>
 </div><!-- fragment --></li>
 <li>Download VSCode from the website: <a href="https://code.visualstudio.com/docs/setup/mac">https://code.visualstudio.com/docs/setup/mac</a></li>
@@ -148,7 +150,7 @@ Windows Tools Setup</h2>
 Linux Tools Setup</h2>
 <ol type="1">
 <li>You probably already know what you're doing, so here are the commands for <code>apt</code> (Ubuntu, Debian, Pop!, etc.): <div class="fragment"><div class="line">sudo apt update &amp;&amp; sudo apt upgrade</div>
-<div class="line">sudo apt install git cmake python3 python3-pip ninja-build gcc-arm-none-eabi openocd stlink-tools</div>
+<div class="line">sudo apt install git cmake python3 python3-pip ninja-build gcc g++ lcov libgtest-dev gcc-arm-none-eabi openocd stlink-tools</div>
 </div><!-- fragment --></li>
 <li>Visual Studio Code requires some special attention, install from <a href="https://code.visualstudio.com/docs/setup/linux">here</a>.</li>
 </ol>

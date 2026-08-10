@@ -123,8 +123,8 @@ Building</h1>
 <p>From the repository root, build all projects with: </p><div class="fragment"><div class="line">python3 per_build.py</div>
 </div><!-- fragment --><p>To build only firmware: </p><div class="fragment"><div class="line">python3 per_build.py firmware --package</div>
 </div><!-- fragment --><p>To build DaqApp only: </p><div class="fragment"><div class="line">python3 per_build.py daqapp</div>
-</div><!-- fragment --><p>To run all host unit tests: </p><div class="fragment"><div class="line">python3 per_build.py tests</div>
-</div><!-- fragment --><p>Run unit tests explicitly with <code>python3 per_build.py tests unit</code>. Generate an HTML coverage report with <code>python3 per_build.py tests unit --coverage</code>; this requires <code>gcov</code>, <code>lcov</code>, and <code>genhtml</code>, and writes the report to <code>firmware/build/host-tests/coverage/html/index.html</code>. See tests/ARCHITECTURE.md for details.</p>
+</div><!-- fragment --><p>To run all host tests and generate an HTML coverage report: </p><div class="fragment"><div class="line">python3 per_build.py tests</div>
+</div><!-- fragment --><p>Run unit tests explicitly with <code>python3 per_build.py tests unit</code>. Coverage and AddressSanitizer/UBSan are enabled by default; coverage requires <code>gcov</code>, <code>lcov</code>, and <code>genhtml</code>, and the report is written to <code>firmware/build/host-tests/coverage/html/index.html</code>. See tests/ARCHITECTURE.md for details.</p>
 <h1><a class="anchor" id="autotoc_md5"></a>
 Hardware Debugging</h1>
 <p>In VS Code, go to <b>View → Run and Debug</b>, select the appropriate MCU target from the dropdown, then press the green ▶️ arrow to flash and live-debug the firmware.</p>
